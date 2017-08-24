@@ -1,10 +1,7 @@
 {
   "name": "@0xcda7a/test-runner",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
   "license": "MIT",
-  "flat": true,
-  "dependencies": {
-    "es-observable": "tc39/proposal-observable"
-  }
+  "flat": true
 }

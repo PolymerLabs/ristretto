@@ -9,10 +9,10 @@ const timePasses = ms => {
 const timeLimit = ms => timePasses(ms)
     .then(() => Promise.reject(new Error(`Time ran out after ${ms}ms`)));
 
-const spec = topicsFactory => {
+const spec = () => {
 
   let topics = [];
-  let node = { topic: 'Spec', tests: [], topics: [] };
+  let node = null;
 
   const it = (description, implementation, timeout = 10000) => {
     const run = async () => Promise.race([implementation(), timeLimit(timeout)]);
@@ -23,7 +23,6 @@ const spec = topicsFactory => {
     const nextNode = { topic, tests: [], topics: [] };
     const currentNode = node;
 
-    node.topics.push(nextNode);
     node = nextNode;
 
     try {
@@ -34,11 +33,15 @@ const spec = topicsFactory => {
     }
 
     node = currentNode;
+
+    if (node != null) {
+      node.topics.push(nextNode);
+    } else {
+      print(nextNode);
+    }
   };
 
-  topicsFactory({ describe, it });
-
-  print(node);
+  return { describe, it };
 }
 
 const print = async ({ topic, tests, topics }) => {
@@ -47,11 +50,9 @@ const print = async ({ topic, tests, topics }) => {
     const { description, run } = tests[i];
 
     try {
-      console.log(`"${description}" running...`);
+      console.log(`"${description}"`);
       await run();
-      console.log('PASSED!');
     } catch (error) {
-      console.error('FAILED!');
       console.error(error);
     }
   }
