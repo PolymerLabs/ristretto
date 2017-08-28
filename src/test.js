@@ -3,6 +3,7 @@ import { timeLimit } from './util.js';
 const $run = Symbol('run');
 const $description = Symbol('description');
 const $topic = Symbol('topic');
+const $config = Symbol('config');
 
 class Test {
   get run() {
@@ -23,16 +24,30 @@ class Test {
         : this.description;
   }
 
-  constructor(description, implementation, timeout = 10000, topic = null) {
+  get timeout() {
+    return this[$config].timeout || 10000;
+  }
+
+  get isolated() {
+    return !!this[$config].isolated;
+  }
+
+  constructor(description, implementation, config = {}, topic = null) {
+    this[$config] = config;
     this[$topic] = topic;
     this[$run] = async () => {
+      let context;
       try {
-        const context = topic != null ? topic.context : {};
-        await Promise.race([implementation(context), timeLimit(timeout)]);
+        context = topic != null ? topic.context : {};
+        await Promise.race([implementation(context), timeLimit(this.timeout)]);
         return { passed: true, error: false };
       } catch (error) {
         console.error(error.stack);
-        return { passed: false, error: { ...error } };
+        return { passed: false, error: { stack: error.stack } };
+      } finally {
+        if (topic != null && context != null) {
+          topic.cleanupContext(context);
+        }
       }
     };
 

@@ -19,9 +19,9 @@ class Spec {
     this[$rootTopic] = null;
     this[$currentTopic] = null;
 
-    this.it = (description, implementation, timeout = 10000) => {
+    this.it = (description, implementation, config) => {
       if (this[$currentTopic]) {
-        this[$currentTopic].addTest(description, implementation, timeout);
+        this[$currentTopic].addTest(description, implementation, config);
       }
     }
 

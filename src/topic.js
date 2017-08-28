@@ -59,19 +59,19 @@ class Topic {
     return subtopic;
   }
 
-  addTest(description, implementation, timeout) {
-    const test = new Test(description, implementation, timeout, this);
+  addTest(description, implementation, config) {
+    const test = new Test(description, implementation, config, this);
     this.tests.push(test);
     return test;
   }
 
   cleanupContext(context) {
-    for (let i = this[$cleanups].length - 1; i > -1; ++i) {
+    for (let i = this[$cleanups].length - 1; i > -1; --i) {
       this[$cleanups][i](context);
     }
 
     if (this[$parentTopic] != null) {
-      this[$parentTopic].cleanup(context);
+      this[$parentTopic].cleanupContext(context);
     }
   }
 }

@@ -1,7 +1,9 @@
 const $specs = Symbol('specs');
 const $isolatedTestRun = Symbol('isolatedTestRun');
 const $address = Symbol('address');
-const $runTopic = Symbol('runTopic');
+const $topicRun = Symbol('topicRun');
+const $testRun = Symbol('testRun');
+const $isIsolated = Symbol('isIsolated');
 
 class Suite {
   constructor(specs) {
@@ -13,47 +15,67 @@ class Suite {
           const parts = part.split('=');
           map[parts[0]] = decodeURIComponent(parts[1]);
           return map;
-        }, {});
+        }, {}) || {};
 
-    this[$address] = queryParams.address
-        ? JSON.parse(queryParams.address)
+    this[$address] = queryParams.testrunner_address
+        ? JSON.parse(queryParams.testrunner_address)
         : null;
+
+    this[$isIsolated] = 'testrunner_isolated' in queryParams;
   }
 
   async run() {
     if (this[$address]) {
-      const spec = this[$specs][this[$address].spec];
-      const test = spec.getTestByAddress(this[$address]);
-      const result = await test.run();
-
-      const resultString = result.passed ? ' PASSED ' : ' FAILED ';
-      const resultColor = result.passed ? 'green' : 'red';
-
-      console.log(`${test.behaviorText}... %c${resultString}`,
-          `color: #fff; font-weight: bold; background-color: ${resultColor}`);
-
-      window.top.postMessage(result, window.location.origin);
+      await this[$testRun](this[$address]);
     } else {
       for (let i = 0; i < this[$specs].length; ++i) {
         const spec = this[$specs][i];
 
         console.log(`%c ${spec.rootTopic.description} `,
-            `background-color: #bef; color: #246; font-weight: bold; font-size: 18px;`);
+            `background-color: #bef; color: #246;
+            font-weight: bold; font-size: 24px;`);
 
-        await this[$runTopic](this[$specs][i].rootTopic, i);
+        await this[$topicRun](this[$specs][i].rootTopic, i);
       }
     }
   }
 
-  async [$runTopic](topic, specIndex, topicAddress = []) {
+  async [$topicRun](topic, specIndex, topicAddress = []) {
     for (let i = 0; i < topic.tests.length; ++i) {
-      await this[$isolatedTestRun]({ spec: specIndex, topic: topicAddress, test: i });
+      await this[$testRun]({ spec: specIndex, topic: topicAddress, test: i });
     }
 
     for (let i = 0; i < topic.topics.length; ++i) {
       topicAddress.push(i);
-      await this[$runTopic](topic.topics[i], specIndex, topicAddress);
+      await this[$topicRun](topic.topics[i], specIndex, topicAddress);
       topicAddress.pop();
+    }
+  }
+
+  async [$testRun](address) {
+    const spec = this[$specs][address.spec];
+    const test = spec.getTestByAddress(address);
+
+    if (!test.isolated || this[$isIsolated]) {
+      const result = await test.run();
+
+      const resultString = result.passed ? ' PASSED ' : ' FAILED ';
+      const resultColor = result.passed ? 'green' : 'red';
+
+      const resultLog = [`${test.behaviorText}... %c${resultString}`,
+          `color: #fff; font-weight: bold; background-color: ${resultColor}`];
+
+      if (test.isolated) {
+        resultLog[0] = `%c ISOLATED %c ${resultLog[0]}`;
+        resultLog.splice(1, 0,
+            `background-color: #fd0; font-weight: bold; color: #830`, ``);
+      }
+
+      console.log(...resultLog);
+
+      window.top.postMessage(result, window.location.origin);
+    } else {
+      await this[$isolatedTestRun](address);
     }
   }
 
@@ -79,7 +101,7 @@ class Suite {
       window.addEventListener('message', receiveMessage);
 
       const searchPrefix = url.search ? `${url.search}&` : '?';
-      url.search = `${searchPrefix}address=${encodeURIComponent(JSON.stringify(address))}`;
+      url.search = `${searchPrefix}testrunner_address=${encodeURIComponent(JSON.stringify(address))}&testrunner_isolated`;
 
       document.body.appendChild(iframe);
       iframe.src = url.toString();
