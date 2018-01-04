@@ -3,5 +3,9 @@
   "version": "0.0.3",
   "main": "index.js",
   "license": "MIT",
-  "flat": true
+  "flat": true,
+  "types": "./index.d.ts",
+  "devDependencies": {
+    "typescript": "^2.6.2"
+  }
 }
