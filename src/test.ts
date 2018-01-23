@@ -8,7 +8,7 @@ export interface TestConfig {
 
 export interface TestResult {
   passed: boolean;
-  error: boolean | Error;
+  error: boolean | Error | { stack: string | void };
 };
 
 export class Test {
