@@ -2,7 +2,7 @@
   "name": "@0xcda7a/test-runner",
   "version": "0.0.4",
   "main": "index.js",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "flat": true,
   "types": "./index.d.ts",
   "devDependencies": {
