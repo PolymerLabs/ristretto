@@ -16,24 +16,60 @@ import { Spec } from './spec.js';
 import { Topic } from './topic.js';
 import { cloneableResult } from './util.js';
 
+/**
+ * These are the query params that are observed and used as configuration by a
+ * `Suite` if they are present in the URL. In the base implementation, these
+ * are primarily used when running isolated tests.
+ */
 interface SuiteQueryParams {
   [index:string]: string | void;
   testrunner_suite_address?: string;
   testrunner_isolated?: void;
 }
 
+/**
+ * A `SuiteAddress` describes the logical position of a `Test` in the hierarchy
+ * of a given `Suite`. It always points to a `Spec` by index, a `Topic` by array
+ * of indicies (e.g., `[0, 1, 2]` would refer to the second subtopic of the
+ * first subtopic of the zeroeth root topic of a given `Spec`), and a `Test` by
+ * index.
+ */
 export interface SuiteAddress {
   spec: number;
   topic: number[];
   test: number;
 }
 
+/**
+ * A `Suite` represents an ordered set of `Spec` instances. Typically, `Spec`
+ * instances are created for each module in a library to represent their
+ * relevant topics and tests, and then imported and composed into a `Suite` in
+ * order to be invoked. For example:
+ *
+ * ```javascript
+ * import { Suite } from '../../@0xcda7a/test-runner/suite.js';
+ * import { fooSpec } from './lib/foo-spec.js';
+ * import { barSpec } from './lib/bar-spec.js';
+ *
+ * const suite = new Suite([
+ *   fooSpec,
+ *   barSpec
+ * ]);
+ *
+ * // Start the test suite:
+ * suite.run();
+ * ```
+ */
 export class Suite {
-  private specs: Spec[];
-  private address: SuiteAddress | null;
+  protected specs: Spec[];
+  protected address: SuiteAddress | null;
 
   readonly isIsolated: boolean;
 
+  /**
+   * The only argument that the base implementation receives is an array of
+   * the specs it consists of, in the order that they should be invoked.
+   */
   constructor(specs: Spec[] = []) {
     this.specs = specs;
 
@@ -53,6 +89,13 @@ export class Suite {
     this.isIsolated = 'testrunner_isolated' in queryParams;
   }
 
+  /**
+   * This method invokes the `Test`s in the `Spec`s in the `Suite`. If there
+   * is a `SuiteAddress` described in the query parameters of the current
+   * URL, it will invoke only the test that corresponds to that address.
+   * Otherwise, it will invoke all tests sequentially in a deterministic order.
+   * The returned promise resolves when all test invocations have completed.
+   */
   async run() {
     if (this.address) {
       await this.testRun(this.address);
