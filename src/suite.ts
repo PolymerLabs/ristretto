@@ -14,7 +14,7 @@
 
 import { Spec } from './spec.js';
 import { Topic } from './topic.js';
-import { TestResult } from './test.js';
+import { cloneableResult } from './util.js';
 
 interface SuiteQueryParams {
   [index:string]: string | void;
@@ -27,19 +27,6 @@ export interface SuiteAddress {
   topic: number[];
   test: number;
 }
-
-const cloneableResult = (result: TestResult): TestResult => {
-  if (result.error instanceof Error) {
-    return {
-      ...result,
-      error: {
-        stack: result.error.stack
-      }
-    };
-  }
-
-  return result;
-};
 
 export class Suite {
   private specs: Spec[];

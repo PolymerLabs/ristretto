@@ -16,6 +16,26 @@ import { Topic } from './topic.js';
 import { Test, TestConfig } from './test.js';
 import { SuiteAddress } from './suite.js';
 
+/**
+ * The `Spec` is the main point of entry to this library for most test suite
+ * authors. A `Spec` holds the relevant "tear-off" test helpers. The base
+ * implementation includes only the most basic BDD helpers (`describe` and
+ * `it`), but it is extensible, and additional tearoffs can be added by
+ * using mixins. An contrived example usage of a `Spec` looks like this:
+ *
+ * ```javascript
+ * export const spec = new Spec();
+ * const { describe, it } = spec;
+ *
+ * describe('some test suite', () => {
+ *   it('has a test!', () => {});
+ * });
+ * ```
+ *
+ * Note that the instance of the `Spec` is exported by the test module.
+ *
+ * `Spec`
+ */
 export class Spec {
   // NOTE(cdata): These are described as class fields so that they can be
   // "torn off" when used in a test:
