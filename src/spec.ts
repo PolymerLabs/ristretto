@@ -16,6 +16,8 @@ import { Topic } from './topic.js';
 import { Test, TestConfig } from './test.js';
 import { SuiteAddress } from './suite.js';
 
+import { Constructor } from './util.js';
+
 export class Spec {
   // NOTE(cdata): These are described as class fields so that they can be
   // "torn off" when used in a test:
@@ -29,7 +31,7 @@ export class Spec {
     return Topic;
   }
 
-  constructor() {
+  constructor<T extends Constructor<TopicImplementation>>(TopicImplementation: T) {
     this.rootTopic = null;
     this.currentTopic = null;
 
