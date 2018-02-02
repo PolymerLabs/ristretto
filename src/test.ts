@@ -20,14 +20,19 @@ export interface TestConfig {
   isolated?: boolean;
 }
 
+export interface TestRunContext {
+  implementation: Function,
+  cancelTimeLimit?: Function
+}
+
 export interface TestResult {
   passed: boolean;
   error: boolean | Error | { stack: string | void };
 };
 
 export class Test {
-  private config: TestConfig;
-  private implementation: Function;
+  protected config: TestConfig;
+  protected implementation: Function;
 
   readonly topic: Topic | void;
   readonly description: string;
@@ -57,21 +62,46 @@ export class Test {
     this.topic = topic;
   }
 
+  protected async wind(context: TestRunContext): Promise<TestRunContext> {
+    const { timeout } = this;
+    const { implementation } = context;
+    const {
+      promise: timeLimitPromise,
+      cancel: cancelTimeLimit
+    } = timeLimit(timeout);
+
+    return {
+      ...context,
+      cancelTimeLimit,
+      implementation: (...args: any[]) =>
+          Promise.race([implementation(...args), timeLimitPromise])
+    };
+  }
+
+  protected async unwind(context: TestRunContext): Promise<void> {
+    context.cancelTimeLimit!();
+  }
+
   async run(): Promise<TestResult> {
-    const { implementation, topic, timeout } = this;
     let context;
 
     try {
-      context = topic != null ? topic.context : {};
-      await Promise.race([implementation(context), timeLimit(timeout)]);
+      context = await this.wind({ implementation: this.implementation });
+    } catch (error) {
+      console.error('Error preparing test context.');
+      console.error(error.stack);
+      return { passed: false, error };
+    }
+
+    try {
+      const { implementation } = context;
+      await implementation();
       return { passed: true, error: false };
     } catch (error) {
       console.error(error.stack);
       return { passed: false, error };
     } finally {
-      if (topic != null && context != null) {
-        topic.cleanupContext(context);
-      }
+      await this.unwind(context);
     }
   }
-}
+};

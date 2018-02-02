@@ -12,12 +12,27 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
+export interface TimeLimitContext {
+  promise: Promise<any>;
+  cancel(): void;
+};
+
 const timePasses = (ms: number): Promise<void> => new Promise(
     resolve => setTimeout(() => {
       resolve();
     }, ms));
 
-const timeLimit = (ms: number): Promise<void> => timePasses(ms)
-    .then(() => Promise.reject(new Error(`Time ran out after ${ms}ms`)));
+const timeLimit = (ms: number): TimeLimitContext => {
+  let cancelled = false;
+
+  return {
+    promise: timePasses(ms).then(() => cancelled
+        ? Promise.reject(new Error(`Time ran out after ${ms}ms`))
+        : Promise.resolve()),
+    cancel() { cancelled = true; }
+  };
+};
 
 export { timePasses, timeLimit };
+
+export type Constructor<T=object> = { new(...args: any[]): T };

@@ -16,20 +16,18 @@ import { Topic } from './topic.js';
 import { Test, TestConfig } from './test.js';
 import { SuiteAddress } from './suite.js';
 
-export type FixtureFunction = (context: object) => any;
-export type CleanupFunction = (context: object) => void;
-
 export class Spec {
   // NOTE(cdata): These are described as class fields so that they can be
   // "torn off" when used in a test:
   it: Function;
   describe: Function;
-  fixture: Function;
-  cleanup: Function;
 
   rootTopic: Topic | null;
+  protected currentTopic: Topic | null;
 
-  private currentTopic: Topic | null;
+  protected get TopicImplementation() {
+    return Topic;
+  }
 
   constructor() {
     this.rootTopic = null;
@@ -44,7 +42,7 @@ export class Spec {
     this.describe = (description: string, factory: Function): void => {
       const { currentTopic } = this as Spec;
       const nextTopic = currentTopic == null
-          ? new Topic(description)
+          ? new this.TopicImplementation(description)
           : currentTopic!.addSubtopic(description);
 
       this.currentTopic = nextTopic;
@@ -61,18 +59,6 @@ export class Spec {
       }
 
       this.currentTopic = currentTopic;
-    }
-
-    this.fixture = (fixture: FixtureFunction): void => {
-      if (this.currentTopic != null) {
-        this.currentTopic.fixtures.push(fixture);
-      }
-    }
-
-    this.cleanup = (cleanup: CleanupFunction): void => {
-      if (this.currentTopic != null) {
-        this.currentTopic.cleanups.push(cleanup);
-      }
     }
   }
 
