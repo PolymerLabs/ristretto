@@ -28,10 +28,19 @@ export interface FixturedTest {
   readonly topic: Topic & FixturedTopic;
 };
 
+/**
+ * Decorates a `Test` implementation with the necessary "wind-up" and
+ * "wind-down" behavior to support fixtured contexts in tests.
+ */
 export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T) {
   return class extends TestImplementation {
     readonly topic: Topic & FixturedTopic;
 
+    /**
+     * When winding up, a fixtured context is generated from a topic, and
+     * the test invocation is wrapped so that the context is passed in
+     * to the test implementation when it is invoked.
+     */
     protected async wind(context: TestRunContext):
         Promise<FixturedTestRunContext> {
       const testContext = await super.wind(context);
@@ -47,6 +56,10 @@ export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T)
       };
     }
 
+    /**
+     * When winding down, a fixtured context is cleaned up by the topic that
+     * created it.
+     */
     protected async unwind(context: FixturedTestRunContext) {
       const { fixtureContext } = context;
       const { topic } = this;
@@ -70,6 +83,11 @@ export interface FixturedTopic {
   disposeContext(context: object): void;
 }
 
+/**
+ * Decorates a `Topic` with the implementation necessary to support describing
+ * fixture steps and cleanup steps on a test, and generating a fixtured context
+ * from those steps.
+ */
 export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation: T) {
   return class extends TopicImplementation {
     protected parentTopic: (Topic & FixturedTopic) | void;
@@ -77,10 +95,19 @@ export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation:
     readonly fixtures: Function[] = [];
     readonly cleanups: Function[] = [];
 
+    /**
+     * The `Test` implementation used for fixture-capable `Topic`s has to
+     * include its own specialized fixture-capable implementation.
+     */
     get TestImplementation() {
       return FixturedTest(super.TestImplementation);
     }
 
+    /**
+     * Generates a fixture context by generating its parent `Topic`'s fixture
+     * context (if there is a parent `Topic`) and passing it through all
+     * fixture steps configured for itself.
+     */
     createContext(): object {
       const context = this.parentTopic != null
           ? this.parentTopic.createContext()
@@ -90,6 +117,11 @@ export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation:
           (context, fixture) => (fixture(context) || context), context);
     }
 
+    /**
+     * Cleans up a fixture context by passing it through all of the configured
+     * cleanup steps on itself, and then passing that context through the
+     * parent `Topic`'s cleanup steps (if there is a parent `Topic`).
+     */
     disposeContext(context: object): void {
       for (let i = this.cleanups.length - 1; i > -1; --i) {
         this.cleanups[i](context);
@@ -113,15 +145,61 @@ export interface FixturedSpec {
 export type FixtureFunction = (context: object) => any;
 export type CleanupFunction = (context: object) => void;
 
+/**
+ * Decorates a `Spec` implementation with the necessary behavior to support
+ * fixtures in tests. For the `Spec`, this primarily consists of adding two
+ * new "tear-off" methods: `fixture` and `cleanup`.
+ */
 export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S) {
   return class extends SpecImplementation {
 
+    /**
+     * The `fixture` method is one of two added "tear-off" methods offered in
+     * the fixture implementation for `Spec`. Invoking `fixture` causes a
+     * step to be added that is run before each test in the immediate parent
+     * topic and all subtopics of the immediate parent topic.
+     *
+     * Additionally, a fixture step function receives a context argument which
+     * can be decorated or substituted and returned by the step. This same
+     * context object will be passed in to all test implementations for which
+     * the fixture step is applicable.
+     *
+     * An example fixture step looks like this:
+     *
+     * ```javascript
+     * describe('some spec', () => {
+     *   fixture(context => ({
+     *     ...context,
+     *     message: 'foo'
+     *   }));
+     *
+     *   it('has context', ({ message }) => {
+     *     console.log(message); // prints 'foo'
+     *   });
+     * });
+     * ```
+     */
     fixture: Function;
+
+    /**
+     * The `cleanup` method is one of two added "tear-off" methods offered in
+     * the fixture implementation for `Spec`. Invoking `cleanup` causes a step
+     * to be added that is run after each test in the immediate parent topic
+     * all subtopics of the immediate parent topic.
+     *
+     * A cleanup step is intended to unset any critical state that is set by a
+     * correspondign fixture step, such as cleaning up mocked global state or
+     * shutting down a server.
+     */
     cleanup: Function;
 
     rootTopic: (Topic & FixturedTopic) | null;
     protected currentTopic: (Topic & FixturedTopic) | null;
 
+    /**
+     * The `Topic` implementation used by a fixture-capable spec requires
+     * the special behavior added by the `FixturedTopic` mixin.
+     */
     protected get TopicImplementation() {
       return FixturedTopic(super.TopicImplementation);
     }
@@ -144,4 +222,8 @@ export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S)
   } as Constructor<Spec & FixturedSpec>;
 }
 
+/**
+ * This is an alias for the `FixturedSpec` mixin, added for convenience and
+ * subjective readability for spec authors.
+ */
 export const Fixturable = FixturedSpec;
