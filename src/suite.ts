@@ -95,6 +95,9 @@ export class Suite {
    * URL, it will invoke only the test that corresponds to that address.
    * Otherwise, it will invoke all tests sequentially in a deterministic order.
    * The returned promise resolves when all test invocations have completed.
+   *
+   * TODO(cdata): This method should probably also accept and respect an address
+   * for a given test to run as an argument.
    */
   async run() {
     if (this.address) {
