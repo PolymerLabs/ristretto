@@ -178,8 +178,16 @@ export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S)
      *   });
      * });
      * ```
+     *
+     * The `fixture` method has two aliases that can be used interchangeably,
+     * even within the same `Spec` if desired (though this is not recommended):
+     *
+     *  - BDD style `before`
+     *  - TDD style `setup`
      */
     fixture: Function;
+    before: Function;
+    setup: Function;
 
     /**
      * The `cleanup` method is one of two added "tear-off" methods offered in
@@ -190,8 +198,16 @@ export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S)
      * A cleanup step is intended to unset any critical state that is set by a
      * correspondign fixture step, such as cleaning up mocked global state or
      * shutting down a server.
+     *
+     * The `cleanup` method has two aliases that can be used interchangeably,
+     * even within the same `Spec` if desired (though this is not recommended):
+     *
+     *  - BDD style `after`
+     *  - TDD style `teardown`
      */
     cleanup: Function;
+    after: Function;
+    teardown: Function;
 
     rootTopic: (Topic & FixturedTopic) | null;
     protected currentTopic: (Topic & FixturedTopic) | null;
@@ -207,17 +223,19 @@ export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S)
     constructor(...args: any[]) {
       super(...args);
 
-      this.fixture = (fixture: FixtureFunction): void => {
-        if (this.currentTopic != null) {
-          this.currentTopic.fixtures.push(fixture);
-        }
-      };
+      this.fixture = this.before = this.setup =
+          (fixture: FixtureFunction): void => {
+            if (this.currentTopic != null) {
+              this.currentTopic.fixtures.push(fixture);
+            }
+          };
 
-      this.cleanup = (cleanup: CleanupFunction): void => {
-        if (this.currentTopic != null) {
-          this.currentTopic.cleanups.push(cleanup);
-        }
-      };
+      this.cleanup = this.after = this.teardown =
+          (cleanup: CleanupFunction): void => {
+            if (this.currentTopic != null) {
+              this.currentTopic.cleanups.push(cleanup);
+            }
+          };
     }
   } as Constructor<Spec & FixturedSpec>;
 }
