@@ -103,4 +103,26 @@ export class Topic {
     this.tests.push(test);
     return test;
   }
+
+  get totalTestCount() {
+    let count = this.tests.length;
+
+    for (const topic of this.topics) {
+      count += topic.totalTestCount;
+    }
+
+    return count;
+  }
+
+  *[Symbol.iterator](): IterableIterator<Test> {
+    for (const test of this.tests) {
+      yield test;
+    }
+
+    for (const topic of this.topics) {
+      for (const test of topic) {
+        yield test;
+      }
+    }
+  }
 }

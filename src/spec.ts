@@ -108,6 +108,24 @@ export class Spec {
     }
   }
 
+  get totalTestCount() {
+    let count = 0;
+
+    if (this.rootTopic != null) {
+      count += this.rootTopic.totalTestCount;
+    }
+
+    return count;
+  }
+
+  *[Symbol.iterator](): IterableIterator<Test> {
+    if (this.rootTopic != null) {
+      for (const test of this.rootTopic) {
+        yield test;
+      }
+    }
+  }
+
   /**
    * All tests in the `Spec` are retrievable by `SuiteAddress`. Any
    * retrieved `Test` can be invoked on an individual basis exactly

@@ -93,6 +93,7 @@ export class Suite {
     this.isMuted = 'testrunner_muted' in queryParams;
   }
 
+
   /**
    * Looks up a test within the current suite hierarchy by address. Returns
    * `null` if no test is found at the given address.
@@ -162,6 +163,28 @@ export class Suite {
         }
 
         await this.topicRun(spec.rootTopic!, i);
+      }
+    }
+  }
+
+  get totalTestCount() {
+    let count = 0;
+
+    for (const spec of this.specs) {
+      count += spec.totalTestCount;
+    }
+
+    return count;
+  }
+
+  *[Symbol.iterator](): IterableIterator<Test> {
+    const { specs } = this;
+
+    for (let i = 0; i < specs.length; ++i) {
+      const spec = specs[i];
+
+      for (const test of spec) {
+        yield test;
       }
     }
   }
