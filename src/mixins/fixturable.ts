@@ -64,7 +64,7 @@ export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T)
       const { fixtureContext } = context;
       const { topic } = this;
 
-      super.windDown(context);
+      await super.windDown(context);
 
       if (topic != null) {
         topic.disposeContext(fixtureContext);
