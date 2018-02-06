@@ -93,6 +93,10 @@ export class Suite {
     this.isMuted = 'testrunner_muted' in queryParams;
   }
 
+  /**
+   * Looks up a test within the current suite hierarchy by address. Returns
+   * `null` if no test is found at the given address.
+   */
   getTestByAddress(address: SuiteAddress): Test | null {
     const spec = this.specs[address.spec];
     const test = spec ? spec.getTestByAddress(address) : null;
@@ -100,6 +104,9 @@ export class Suite {
     return test;
   }
 
+  /**
+   * Resolves an address for a given test within the current suite hierarchy.
+   */
   getAddressForTest(test: Test): SuiteAddress {
     let { topic } = test;
     const testIndex = topic ? topic.tests.indexOf(test) : -1;
