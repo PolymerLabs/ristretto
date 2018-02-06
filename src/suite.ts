@@ -13,7 +13,6 @@
  */
 
 import { Spec } from './spec.js';
-import { Topic } from './topic.js';
 import { Test } from './test.js';
 import { cloneableResult } from './util.js';
 
@@ -146,27 +145,23 @@ export class Suite {
    * for a given test to run as an argument.
    */
   async run() {
-    if (this.address) {
+    if (this.address != null) {
       const test = this.getTestByAddress(this.address);
 
       if (test != null) {
         await this.testRun(test);
       }
     } else {
-      for (let i = 0; i < this.specs.length; ++i) {
-        const spec = this.specs[i];
-
-        if (!this.isMuted) {
-          console.log(`%c ${spec.rootTopic!.description} `,
-              `background-color: #bef; color: #246;
-              font-weight: bold; font-size: 24px;`);
-        }
-
-        await this.topicRun(spec.rootTopic!, i);
+      for (const test of this) {
+        await this.testRun(test);
       }
     }
   }
 
+  /**
+   * The total number of tests in suite, including in all spec topics and their
+   * sub-topics.
+   */
   get totalTestCount() {
     let count = 0;
 
@@ -177,6 +172,9 @@ export class Suite {
     return count;
   }
 
+  /**
+   * Iterate over all tests in the suite.
+   */
   *[Symbol.iterator](): IterableIterator<Test> {
     const { specs } = this;
 
@@ -189,53 +187,12 @@ export class Suite {
     }
   }
 
-  protected async topicRun(topic: Topic,
-      specIndex: number,
-      topicAddress: number[] = []) {
-    for (let i = 0; i < topic.tests.length; ++i) {
-      const address: SuiteAddress = {
-        spec: specIndex,
-        topic: topicAddress,
-        test: i
-      };
-
-      const test = this.getTestByAddress(address);
-
-      if (test != null) {
-        await this.testRun(test);
-      }
-    }
-
-    for (let i = 0; i < topic.topics.length; ++i) {
-      topicAddress.push(i);
-      await this.topicRun(topic.topics[i], specIndex, topicAddress);
-      topicAddress.pop();
-    }
-  }
-
   protected async testRun(test: Test) {
     if (test == null) {
       throw new Error('No test found!');
     }
 
     const result = await test.run(this);
-
-    if (!this.isMuted) {
-      // TODO(cdata): This should all be moved to an external reporter
-      const resultString = result.passed ? ' PASSED ' : ' FAILED ';
-      const resultColor = result.passed ? 'green' : 'red';
-
-      const resultLog = [`${test.behaviorText}... %c${resultString}`,
-          `color: #fff; font-weight: bold; background-color: ${resultColor}`];
-
-      if ((test as any).isolated) {
-        resultLog[0] = `%c ISOLATED %c ${resultLog[0]}`;
-        resultLog.splice(1, 0,
-            `background-color: #fd0; font-weight: bold; color: #830`, ``);
-      }
-
-      console.log(...resultLog);
-    }
 
     window.top.postMessage(cloneableResult(result), window.location.origin);
   }

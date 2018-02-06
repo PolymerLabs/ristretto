@@ -108,6 +108,10 @@ export class Spec {
     }
   }
 
+  /**
+   * The total number of tests in this spec, including the root topic and
+   * all sub-topics.
+   */
   get totalTestCount() {
     let count = 0;
 
@@ -118,6 +122,9 @@ export class Spec {
     return count;
   }
 
+  /**
+   * Iterate over all tests in the spec.
+   */
   *[Symbol.iterator](): IterableIterator<Test> {
     if (this.rootTopic != null) {
       for (const test of this.rootTopic) {

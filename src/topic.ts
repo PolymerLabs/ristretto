@@ -104,6 +104,10 @@ export class Topic {
     return test;
   }
 
+  /**
+   * The total number of tests in this topic, including all tests in all
+   * sub-topics.
+   */
   get totalTestCount() {
     let count = this.tests.length;
 
@@ -114,6 +118,9 @@ export class Topic {
     return count;
   }
 
+  /**
+   * Iterate over all tests in the topic, including all sub-topics.
+   */
   *[Symbol.iterator](): IterableIterator<Test> {
     for (const test of this.tests) {
       yield test;
