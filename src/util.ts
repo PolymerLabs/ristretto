@@ -49,8 +49,8 @@ export const timeLimit = (ms: number): TimeLimitContext => {
 
   return {
     promise: timePasses(ms).then(() => cancelled
-        ? Promise.reject(new Error(`Time ran out after ${ms}ms`))
-        : Promise.resolve()),
+        ? Promise.resolve()
+        : Promise.reject(new Error(`Time ran out after ${ms}ms`))),
     cancel() { cancelled = true; }
   };
 };

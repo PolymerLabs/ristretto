@@ -38,7 +38,7 @@ import { Test, TestConfig } from './test.js';
  * ```
  */
 export class Topic {
-  protected parentTopic: Topic | void;
+  readonly parentTopic: Topic | void;
 
   /**
    * The set of tests directly associated with this topic. Subtopic tests
@@ -58,7 +58,7 @@ export class Topic {
    */
   readonly description: string;
 
-  get TestImplementation() {
+  protected get TestImplementation() {
     return Test;
   }
 

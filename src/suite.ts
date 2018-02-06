@@ -14,6 +14,7 @@
 
 import { Spec } from './spec.js';
 import { Topic } from './topic.js';
+import { Test } from './test.js';
 import { cloneableResult } from './util.js';
 
 /**
@@ -21,10 +22,10 @@ import { cloneableResult } from './util.js';
  * `Suite` if they are present in the URL. In the base implementation, these
  * are primarily used when running isolated tests.
  */
-interface SuiteQueryParams {
+export interface SuiteQueryParams {
   [index:string]: string | void;
   testrunner_suite_address?: string;
-  testrunner_isolated?: void;
+  testrunner_muted?: void;
 }
 
 /**
@@ -64,7 +65,9 @@ export class Suite {
   protected specs: Spec[];
   protected address: SuiteAddress | null;
 
-  readonly isIsolated: boolean;
+  readonly isMuted: boolean;
+
+  queryParams: SuiteQueryParams;
 
   /**
    * The only argument that the base implementation receives is an array of
@@ -82,11 +85,46 @@ export class Suite {
       }, queryParams);
     };
 
+    this.queryParams = queryParams;
     this.address = queryParams.testrunner_suite_address
         ? JSON.parse(queryParams.testrunner_suite_address) as SuiteAddress
         : null;
 
-    this.isIsolated = 'testrunner_isolated' in queryParams;
+    this.isMuted = 'testrunner_muted' in queryParams;
+  }
+
+  getTestByAddress(address: SuiteAddress): Test | null {
+    const spec = this.specs[address.spec];
+    const test = spec ? spec.getTestByAddress(address) : null;
+
+    return test;
+  }
+
+  getAddressForTest(test: Test): SuiteAddress {
+    let { topic } = test;
+    const testIndex = topic ? topic.tests.indexOf(test) : -1;
+    const topicAddress = [];
+    let specIndex = -1;
+
+    while (topic != null) {
+      const { parentTopic } = topic;
+
+      if (parentTopic != null) {
+        topicAddress.unshift(parentTopic.topics.indexOf(topic));
+      } else {
+        for (let i = 0; i < this.specs.length; ++i) {
+          const spec = this.specs[i];
+
+          if (spec.rootTopic === topic) {
+            specIndex = i;
+          }
+        }
+      }
+
+      topic = parentTopic;
+    }
+
+    return { spec: specIndex, topic: topicAddress, test: testIndex };
   }
 
   /**
@@ -101,7 +139,11 @@ export class Suite {
    */
   async run() {
     if (this.address) {
-      await this.testRun(this.address);
+      const test = this.getTestByAddress(this.address);
+
+      if (test != null) {
+        await this.testRun(test);
+      }
     } else {
       for (let i = 0; i < this.specs.length; ++i) {
         const spec = this.specs[i];
@@ -115,11 +157,21 @@ export class Suite {
     }
   }
 
-  private async topicRun(topic: Topic,
+  protected async topicRun(topic: Topic,
       specIndex: number,
       topicAddress: number[] = []) {
     for (let i = 0; i < topic.tests.length; ++i) {
-      await this.testRun({ spec: specIndex, topic: topicAddress, test: i });
+      const address: SuiteAddress = {
+        spec: specIndex,
+        topic: topicAddress,
+        test: i
+      };
+
+      const test = this.getTestByAddress(address);
+
+      if (test != null) {
+        await this.testRun(test);
+      }
     }
 
     for (let i = 0; i < topic.topics.length; ++i) {
@@ -129,65 +181,29 @@ export class Suite {
     }
   }
 
-  private async testRun(address: SuiteAddress) {
-    const spec = this.specs[address.spec];
-    const test = spec.getTestByAddress(address);
-
+  protected async testRun(test: Test) {
     if (test == null) {
       throw new Error('No test found!');
     }
 
-    if (!(test!.isolated) || this.isIsolated) {
-      const result = await test.run();
+    const result = await test.run(this);
 
+    if (!this.isMuted) {
       const resultString = result.passed ? ' PASSED ' : ' FAILED ';
       const resultColor = result.passed ? 'green' : 'red';
 
       const resultLog = [`${test.behaviorText}... %c${resultString}`,
           `color: #fff; font-weight: bold; background-color: ${resultColor}`];
 
-      if (test.isolated) {
+      if ((test as any).isolated) {
         resultLog[0] = `%c ISOLATED %c ${resultLog[0]}`;
         resultLog.splice(1, 0,
             `background-color: #fd0; font-weight: bold; color: #830`, ``);
       }
 
       console.log(...resultLog);
-
-      window.top.postMessage(cloneableResult(result), window.location.origin);
-    } else {
-      await this.isolatedTestRun(address);
     }
-  }
 
-  private async isolatedTestRun(address: SuiteAddress) {
-    await new Promise(resolve => {
-      const url = new URL(window.location.toString());
-      const iframe = document.createElement('iframe');
-      const receiveMessage = (event: Event) => {
-        if ((event as MessageEvent).source !== iframe.contentWindow) {
-          return;
-        }
-
-        const result = (event as MessageEvent).data;
-        document.body.removeChild(iframe);
-        iframe.removeEventListener('message', receiveMessage);
-        resolve(result);
-      };
-
-      iframe.style.position = 'absolute';
-      iframe.style.top = '-1000px';
-      iframe.style.left = '-1000px';
-
-      window.addEventListener('message', receiveMessage);
-
-      const searchPrefix = url.search ? `${url.search}&` : '?';
-      const uriAddress = encodeURIComponent(JSON.stringify(address));
-      url.search =
-          `${searchPrefix}testrunner_suite_address=${uriAddress}&testrunner_isolated`;
-
-      document.body.appendChild(iframe);
-      iframe.src = url.toString();
-    });
+    window.top.postMessage(cloneableResult(result), window.location.origin);
   }
 }
