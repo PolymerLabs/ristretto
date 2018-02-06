@@ -38,12 +38,14 @@ export interface TestRunContext {
 /**
  * A `TestResult` represents the pass or failure of a given test run. The
  * result contains a boolean `passed`, and also an `error` property that
- * contains the relevant error object if the test failed. Note that isolated
- * tests cannot report the error object in its original form, so a sparse
- * representation containing only the error stack will be availabe in that
- * case.
+ * contains the relevant error object if the test failed. Note that some
+ * kinds of tests cannot report the error object in its original form, so a
+ * sparse representation containing only the error stack will be availabe in
+ * that case.
  */
 export interface TestResult {
+  behaviorText: string;
+  config: TestConfig;
   passed: boolean;
   error: boolean | Error | { stack: string | void };
 };
@@ -53,9 +55,8 @@ export interface TestResult {
  * chunk of script - referred to as the `implementation` - that asserts some
  * thing related to whatever you are testing. In addition to the test
  * `implementation`, a `Test` also has a related human-readable `description`
- * and a reference to its immediate parent `Topic`. A test can be configured to
- * be preferrably `isolated`, and also with a `timeout` after which the a
- * test run will automatically fail.
+ * and a reference to its immediate parent `Topic`. A test can be configured
+ * with a `timeout` after which the a test run will automatically fail.
  *
  * A `Test` is typically created when test details are added to a topic. An
  * example of this is whenever `it` is invoked in a test suite:
@@ -177,6 +178,11 @@ export class Test {
    * an exception is measured, the method returns a non-passing `TestResult`.
    */
   async run(suite: Suite): Promise<TestResult> {
+    const partialResult = {
+      behaviorText: this.behaviorText,
+      config: this.config
+    };
+
     let context;
 
     try {
@@ -190,19 +196,19 @@ export class Test {
         console.error(error.stack);
       }
 
-      return { passed: false, error };
+      return { ...partialResult, passed: false, error };
     }
 
     try {
       const { implementation } = context;
       await implementation();
-      return { passed: true, error: false };
+      return { ...partialResult, passed: true, error: false };
     } catch (error) {
       if (!suite.isMuted) {
         console.error(error.stack);
       }
 
-      return { passed: false, error };
+      return { ...partialResult, passed: false, error };
     } finally {
       await this.windDown(context);
     }

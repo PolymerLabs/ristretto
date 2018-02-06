@@ -155,9 +155,11 @@ export class Suite {
       for (let i = 0; i < this.specs.length; ++i) {
         const spec = this.specs[i];
 
-        console.log(`%c ${spec.rootTopic!.description} `,
-            `background-color: #bef; color: #246;
-            font-weight: bold; font-size: 24px;`);
+        if (!this.isMuted) {
+          console.log(`%c ${spec.rootTopic!.description} `,
+              `background-color: #bef; color: #246;
+              font-weight: bold; font-size: 24px;`);
+        }
 
         await this.topicRun(spec.rootTopic!, i);
       }
@@ -196,6 +198,7 @@ export class Suite {
     const result = await test.run(this);
 
     if (!this.isMuted) {
+      // TODO(cdata): This should all be moved to an external reporter
       const resultString = result.passed ? ' PASSED ' : ' FAILED ';
       const resultColor = result.passed ? 'green' : 'red';
 
