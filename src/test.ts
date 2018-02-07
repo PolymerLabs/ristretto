@@ -14,15 +14,14 @@
 
 import { timeLimit } from './util.js';
 import { Topic } from './topic.js';
+import { Suite } from './suite.js';
+import { ReporterEvent } from './reporter.js';
 
 /**
- * The basic test configuration object supports a timeout in milliseconds
- * and an isolated flag. Isolated tests are run individually in an iframe
- * context.
- */
+ * The basic test configuration object supports a timeout in milliseconds.
+  */
 export interface TestConfig {
   timeout?: number;
-  isolated?: boolean;
 }
 
 /**
@@ -32,6 +31,7 @@ export interface TestConfig {
  * directly exposed to the author of a test suite.
  */
 export interface TestRunContext {
+  suite: Suite,
   implementation: Function,
   cancelTimeLimit?: Function
 }
@@ -39,12 +39,14 @@ export interface TestRunContext {
 /**
  * A `TestResult` represents the pass or failure of a given test run. The
  * result contains a boolean `passed`, and also an `error` property that
- * contains the relevant error object if the test failed. Note that isolated
- * tests cannot report the error object in its original form, so a sparse
- * representation containing only the error stack will be availabe in that
- * case.
+ * contains the relevant error object if the test failed. Note that some
+ * kinds of tests cannot report the error object in its original form, so a
+ * sparse representation containing only the error stack will be availabe in
+ * that case.
  */
 export interface TestResult {
+  behaviorText: string;
+  config: TestConfig;
   passed: boolean;
   error: boolean | Error | { stack: string | void };
 };
@@ -54,9 +56,8 @@ export interface TestResult {
  * chunk of script - referred to as the `implementation` - that asserts some
  * thing related to whatever you are testing. In addition to the test
  * `implementation`, a `Test` also has a related human-readable `description`
- * and a reference to its immediate parent `Topic`. A test can be configured to
- * be preferrably `isolated`, and also with a `timeout` after which the a
- * test run will automatically fail.
+ * and a reference to its immediate parent `Topic`. A test can be configured
+ * with a `timeout` after which the a test run will automatically fail.
  *
  * A `Test` is typically created when test details are added to a topic. An
  * example of this is whenever `it` is invoked in a test suite:
@@ -102,15 +103,6 @@ export class Test {
   }
 
   /**
-   * If a test is configured to be `isolated`, it means it is intended to be
-   * invoked in a clean room context without any meaningful state leakage. An
-   * example of such an environment in a browser is an newly created iframe.
-   */
-  get isolated(): boolean {
-    return !!this.config.isolated;
-  }
-
-  /**
    * A `Test` is created by providing a human readable `description`, a
    * function implementating the actual test routine, an optional configuration
    * object and an optional reference to a related parent `Topic`.
@@ -132,14 +124,14 @@ export class Test {
    * default `TestRunContext` contains only one key: the current
    * `implementation` of the test. It is important to refer to this
    * `implementation`, as it may be modified by specialized overridden
-   * implementations of `wind`.
+   * implementations of `windUp`.
    *
-   * The `wind` method should return a modified `TestRunContext`, if
+   * The `windUp` method should return a modified `TestRunContext`, if
    * any modifications are deemed necessary. The default implementation,
    * for example, modifies the test `implementation` to include a time limit
    * after which the test will automatically fail.
    */
-  protected async wind(context: TestRunContext): Promise<TestRunContext> {
+  protected async windUp(context: TestRunContext): Promise<TestRunContext> {
     const { timeout } = this;
     const { implementation } = context;
     const {
@@ -158,15 +150,15 @@ export class Test {
   /**
    * When a test invokation has completed, there is a "wind-down" phase
    * that allows the `Test` class and any specializations to clean up the
-   * `TestRunContext` that was created during the "wind-up" phase. The `unwind`
-   * method is always invoked at the end of a test run, regardless of whether
-   * the test passed or failed. However, it is not invoked if an exception
-   * is thrown during the "wind-up" phase.
+   * `TestRunContext` that was created during the "wind-up" phase. The
+   * `windDown` method is always invoked at the end of a test run, regardless
+   * of whether the test passed or failed. However, it is not invoked if an
+   * exception is thrown during the "wind-up" phase.
    *
-   * The default `unwind` method, for example, cancels the time limit
-   * created by the default `wind` method.
+   * The default `windDown` method, for example, cancels the time limit
+   * created by the default `windUp` method.
    */
-  protected async unwind(context: TestRunContext): Promise<void> {
+  protected async windDown(context: TestRunContext): Promise<void> {
     context.cancelTimeLimit!();
   }
 
@@ -179,33 +171,42 @@ export class Test {
    *  3. Wind-down phase, during which the `TestRunContext` is cleaned up.
    *
    * The "wind-up" and "wind-down" phases are described in detail by the
-   * related `wind` and `unwind` methods in this class.
+   * related `windUp` and `windDown` methods in this class.
    *
    * The test run phase consists of taking the `implementation` generated
    * by the "wind-up" phase, invoking it, and measuring it for exceptions. If
    * no exceptions are measured, the method returns a passing `TestResult`. If
    * an exception is measured, the method returns a non-passing `TestResult`.
    */
-  async run(): Promise<TestResult> {
+  async run(suite: Suite): Promise<TestResult> {
+    const { reporter } = suite;
+    const partialResult = {
+      behaviorText: this.behaviorText,
+      config: this.config
+    };
+
     let context;
 
     try {
-      context = await this.wind({ implementation: this.implementation });
+      context = await this.windUp({
+        suite,
+        implementation: this.implementation
+      });
     } catch (error) {
-      console.error('Error preparing test context.');
-      console.error(error.stack);
-      return { passed: false, error };
+      reporter.report(ReporterEvent.unexpectedError,
+          'Error preparing test context.', error, suite);
+
+      return { ...partialResult, passed: false, error };
     }
 
     try {
       const { implementation } = context;
       await implementation();
-      return { passed: true, error: false };
+      return { ...partialResult, passed: true, error: false };
     } catch (error) {
-      console.error(error.stack);
-      return { passed: false, error };
+      return { ...partialResult, passed: false, error };
     } finally {
-      await this.unwind(context);
+      await this.windDown(context);
     }
   }
 };

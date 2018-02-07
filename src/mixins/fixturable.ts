@@ -41,9 +41,9 @@ export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T)
      * the test invocation is wrapped so that the context is passed in
      * to the test implementation when it is invoked.
      */
-    protected async wind(context: TestRunContext):
+    protected async windUp(context: TestRunContext):
         Promise<FixturedTestRunContext> {
-      const testContext = await super.wind(context);
+      const testContext = await super.windUp(context);
       const { implementation } = testContext;
 
       const { topic } = this;
@@ -60,9 +60,11 @@ export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T)
      * When winding down, a fixtured context is cleaned up by the topic that
      * created it.
      */
-    protected async unwind(context: FixturedTestRunContext) {
+    protected async windDown(context: FixturedTestRunContext) {
       const { fixtureContext } = context;
       const { topic } = this;
+
+      await super.windDown(context);
 
       if (topic != null) {
         topic.disposeContext(fixtureContext);
@@ -90,7 +92,7 @@ export interface FixturedTopic {
  */
 export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation: T) {
   return class extends TopicImplementation {
-    protected parentTopic: (Topic & FixturedTopic) | void;
+    parentTopic: (Topic & FixturedTopic) | void;
 
     readonly fixtures: Function[] = [];
     readonly cleanups: Function[] = [];

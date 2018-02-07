@@ -38,7 +38,7 @@ import { Test, TestConfig } from './test.js';
  * ```
  */
 export class Topic {
-  protected parentTopic: Topic | void;
+  readonly parentTopic: Topic | void;
 
   /**
    * The set of tests directly associated with this topic. Subtopic tests
@@ -58,7 +58,7 @@ export class Topic {
    */
   readonly description: string;
 
-  get TestImplementation() {
+  protected get TestImplementation() {
     return Test;
   }
 
@@ -102,5 +102,34 @@ export class Topic {
         config, this);
     this.tests.push(test);
     return test;
+  }
+
+  /**
+   * The total number of tests in this topic, including all tests in all
+   * sub-topics.
+   */
+  get totalTestCount() {
+    let count = this.tests.length;
+
+    for (const topic of this.topics) {
+      count += topic.totalTestCount;
+    }
+
+    return count;
+  }
+
+  /**
+   * Iterate over all tests in the topic, including all sub-topics.
+   */
+  *[Symbol.iterator](): IterableIterator<Test> {
+    for (const test of this.tests) {
+      yield test;
+    }
+
+    for (const topic of this.topics) {
+      for (const test of topic) {
+        yield test;
+      }
+    }
   }
 }
