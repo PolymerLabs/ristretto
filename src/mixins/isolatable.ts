@@ -48,6 +48,11 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
 
     protected config: IsolatedTestConfig;
 
+    /**
+     * An isolated test run must post its results to the parent frame in order
+     * to be completed. We override run to do this if we detect that we are
+     * isolated.
+     */
     async run(suite: Suite, ...args: any[]) {
       const result = await super.run(suite, ...args);
       const { queryParams } = suite;
