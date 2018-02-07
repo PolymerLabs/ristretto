@@ -1,10 +1,11 @@
 {
   "name": "@0xcda7a/test-runner",
-  "version": "0.0.4",
-  "main": "index.js",
+  "version": "0.1.0",
   "license": "BSD-3-Clause",
   "flat": true,
-  "types": "./index.d.ts",
+  "types": "lib/index.d.ts",
+  "main": "lib/index.js",
+  "module": "lib/index.js",
   "devDependencies": {
     "typescript": "^2.6.2"
   }
