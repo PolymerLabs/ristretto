@@ -14,7 +14,6 @@
 
 import { Spec } from './spec.js';
 import { Test } from './test.js';
-//import { cloneableResult } from './util.js';
 import { Reporter, ReporterEvent } from './reporter.js';
 import { ConsoleReporter } from './reporters/console-reporter.js';
 

@@ -30,6 +30,10 @@ export interface IsolatedTest {
   readonly isolated: boolean;
 }
 
+enum IsolatedTestMessage {
+  messagePort = 'TestrunnerIsolatedTestMessagePort',
+  ready = 'TestrunnerIsolatedTestReady'
+}
 
 /**
  * An isolated test is one that runs in a "clean room" context. Currently, this
@@ -54,11 +58,17 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
      * isolated.
      */
     async run(suite: Suite, ...args: any[]) {
-      const result = await super.run(suite, ...args);
       const { queryParams } = suite;
+      let port: MessagePort | undefined;
 
       if ('testrunner_isolated' in queryParams) {
-        window.top.postMessage(cloneableResult(result), window.location.origin);
+        port = await this.receiveMessagePort();
+      }
+
+      const result = await super.run(suite, ...args);
+
+      if ('testrunner_isolated' in queryParams && port != null) {
+        port.postMessage(cloneableResult(result));
       }
 
       return result;
@@ -91,20 +101,51 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
       };
     }
 
-    protected async isolatedRun(address: SuiteAddress): Promise<TestResult> {
+    protected async receiveMessagePort(): Promise<MessagePort> {
+      window.postMessage(IsolatedTestMessage.ready, window.location.origin);
+
       return new Promise(resolve => {
-        const url = new URL(window.location.toString());
-        const iframe = document.createElement('iframe');
-        const receiveMessage = (event: Event) => {
-          if ((event as MessageEvent).source !== iframe.contentWindow) {
+        const receiveMessage = (event: MessageEvent) => {
+          if (event.data !== IsolatedTestMessage.messagePort) {
             return;
           }
 
-          const result = (event as MessageEvent).data;
-          document.body.removeChild(iframe);
+          resolve(event.ports[0]);
           window.removeEventListener('message', receiveMessage);
-          resolve(result);
         };
+
+        window.addEventListener('message', receiveMessage);
+      }) as Promise<MessagePort>;
+    }
+
+    protected async isolatedRun(address: SuiteAddress): Promise<TestResult> {
+      return new Promise(resolve => {
+        const channel = new MessageChannel();
+        const { port1, port2 } = channel;
+        const url = new URL(window.location.toString());
+        const iframe = document.createElement('iframe');
+        const receiveMessage = (event: MessageEvent) => {
+          if (event.source !== iframe.contentWindow &&
+              event.data !== IsolatedTestMessage.ready) {
+            return;
+          }
+
+          iframe.contentWindow.postMessage(
+              IsolatedTestMessage.messagePort, '*', [port2]);
+        };
+
+        const receiveResult = (event: MessageEvent) => {
+          if (event.data == null) {
+            return;
+          }
+
+          port1.removeEventListener('message', receiveResult);
+          document.body.removeChild(iframe);
+          resolve(event.data);
+        };
+
+        port1.addEventListener('message', receiveResult);
+        port1.start();
 
         iframe.style.position = 'absolute';
         iframe.style.top = '-1000px';
