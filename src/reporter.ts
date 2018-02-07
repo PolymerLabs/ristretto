@@ -46,7 +46,7 @@ export abstract class Reporter {
   /**
    * Dispatches an event's details to the appropriate lifecycle callback.
    */
-  dispatchEvent(eventName: ReporterEvent, ...args: any[]): boolean {
+  report(eventName: ReporterEvent, ...args: any[]): boolean {
     const methodName = `on${eventName}` as keyof this;
 
     if (this.disabled || this[methodName] == null) {

@@ -151,10 +151,10 @@ export class Suite {
     const soloTest = address ? this.getTestByAddress(address) : null;
     const soloSpec = address ? this.specs[address.spec] : null;
 
-    reporter.dispatchEvent(ReporterEvent.suiteStart, this);
+    reporter.report(ReporterEvent.suiteStart, this);
 
     for (const spec of this.specs) {
-      reporter.dispatchEvent(ReporterEvent.specStart, spec, this);
+      reporter.report(ReporterEvent.specStart, spec, this);
 
       if (soloSpec != null && spec !== soloSpec) {
         continue;
@@ -165,17 +165,17 @@ export class Suite {
           continue;
         }
 
-        reporter.dispatchEvent(ReporterEvent.testStart, test, this);
+        reporter.report(ReporterEvent.testStart, test, this);
 
         const result = await test.run(this);
 
-        reporter.dispatchEvent(ReporterEvent.testEnd, result, test, this);
+        reporter.report(ReporterEvent.testEnd, result, test, this);
       }
 
-      reporter.dispatchEvent(ReporterEvent.specEnd, spec, this);
+      reporter.report(ReporterEvent.specEnd, spec, this);
     }
 
-    reporter.dispatchEvent(ReporterEvent.suiteEnd, this);
+    reporter.report(ReporterEvent.suiteEnd, this);
   }
 
   /**

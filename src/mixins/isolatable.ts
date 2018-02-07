@@ -78,7 +78,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
       const { suite } = context;
       const { queryParams } = suite;
       const isIsolated = 'testrunner_isolated' in queryParams;
-      const shouldBeIsolated = !!this.config.isolated;
+      const shouldBeIsolated = !!this.isolated;
 
       context = await super.windUp(context);
 

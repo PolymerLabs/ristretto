@@ -193,7 +193,7 @@ export class Test {
         implementation: this.implementation
       });
     } catch (error) {
-      reporter.dispatchEvent(ReporterEvent.unexpectedError,
+      reporter.report(ReporterEvent.unexpectedError,
           'Error preparing test context.', error, suite);
 
       return { ...partialResult, passed: false, error };
