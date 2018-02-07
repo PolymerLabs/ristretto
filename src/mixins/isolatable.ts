@@ -12,7 +12,8 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import { Constructor } from '../util.js';
+import { Constructor, cloneableResult } from '../util.js';
+import { Suite } from '../suite.js';
 import { Spec } from '../spec.js';
 import { Topic } from '../topic.js';
 import { Test, TestRunContext, TestConfig, TestResult } from '../test.js';
@@ -46,6 +47,22 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
     }
 
     protected config: IsolatedTestConfig;
+
+    /**
+     * An isolated test run must post its results to the parent frame in order
+     * to be completed. We override run to do this if we detect that we are
+     * isolated.
+     */
+    async run(suite: Suite, ...args: any[]) {
+      const result = await super.run(suite, ...args);
+      const { queryParams } = suite;
+
+      if ('testrunner_isolated' in queryParams) {
+        window.top.postMessage(cloneableResult(result), window.location.origin);
+      }
+
+      return result;
+    }
 
     protected async windUp(context: TestRunContext): Promise<TestRunContext> {
       const { suite } = context;
@@ -85,7 +102,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
 
           const result = (event as MessageEvent).data;
           document.body.removeChild(iframe);
-          iframe.removeEventListener('message', receiveMessage);
+          window.removeEventListener('message', receiveMessage);
           resolve(result);
         };
 
@@ -98,7 +115,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
         const searchPrefix = url.search ? `${url.search}&` : '?';
         const uriAddress = encodeURIComponent(JSON.stringify(address));
         url.search =
-            `${searchPrefix}testrunner_suite_address=${uriAddress}&testrunner_isolated&testrunner_muted`;
+            `${searchPrefix}testrunner_suite_address=${uriAddress}&testrunner_isolated&testrunner_disable_reporting`;
 
         document.body.appendChild(iframe);
         iframe.src = url.toString();

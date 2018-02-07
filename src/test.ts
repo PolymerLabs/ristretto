@@ -15,6 +15,7 @@
 import { timeLimit } from './util.js';
 import { Topic } from './topic.js';
 import { Suite } from './suite.js';
+import { ReporterEvent } from './reporter.js';
 
 /**
  * The basic test configuration object supports a timeout in milliseconds.
@@ -178,6 +179,7 @@ export class Test {
    * an exception is measured, the method returns a non-passing `TestResult`.
    */
   async run(suite: Suite): Promise<TestResult> {
+    const { reporter } = suite;
     const partialResult = {
       behaviorText: this.behaviorText,
       config: this.config
@@ -191,10 +193,8 @@ export class Test {
         implementation: this.implementation
       });
     } catch (error) {
-      if (!suite.isMuted) {
-        console.error('Error preparing test context.');
-        console.error(error.stack);
-      }
+      reporter.dispatchEvent(ReporterEvent.unexpectedError,
+          'Error preparing test context.', error, suite);
 
       return { ...partialResult, passed: false, error };
     }
@@ -204,10 +204,6 @@ export class Test {
       await implementation();
       return { ...partialResult, passed: true, error: false };
     } catch (error) {
-      if (!suite.isMuted) {
-        console.error(error.stack);
-      }
-
       return { ...partialResult, passed: false, error };
     } finally {
       await this.windDown(context);

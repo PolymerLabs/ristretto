@@ -109,6 +109,31 @@ export class Spec {
   }
 
   /**
+   * The total number of tests in this spec, including the root topic and
+   * all sub-topics.
+   */
+  get totalTestCount() {
+    let count = 0;
+
+    if (this.rootTopic != null) {
+      count += this.rootTopic.totalTestCount;
+    }
+
+    return count;
+  }
+
+  /**
+   * Iterate over all tests in the spec.
+   */
+  *[Symbol.iterator](): IterableIterator<Test> {
+    if (this.rootTopic != null) {
+      for (const test of this.rootTopic) {
+        yield test;
+      }
+    }
+  }
+
+  /**
    * All tests in the `Spec` are retrievable by `SuiteAddress`. Any
    * retrieved `Test` can be invoked on an individual basis exactly
    * as it would be invoked if it were running inline with the rest of the

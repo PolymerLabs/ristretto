@@ -13,19 +13,20 @@
  */
 
 import { Spec } from './spec.js';
-import { Topic } from './topic.js';
 import { Test } from './test.js';
-import { cloneableResult } from './util.js';
+//import { cloneableResult } from './util.js';
+import { Reporter, ReporterEvent } from './reporter.js';
+import { ConsoleReporter } from './reporters/console-reporter.js';
 
 /**
  * These are the query params that are observed and used as configuration by a
  * `Suite` if they are present in the URL. In the base implementation, these
- * are primarily used when running isolated tests.
+ * are primarily used when running tests in a specialized fashion.
  */
 export interface SuiteQueryParams {
   [index:string]: string | void;
   testrunner_suite_address?: string;
-  testrunner_muted?: void;
+  testrunner_disable_reporting?: void;
 }
 
 /**
@@ -65,16 +66,16 @@ export class Suite {
   protected specs: Spec[];
   protected address: SuiteAddress | null;
 
-  readonly isMuted: boolean;
-
-  queryParams: SuiteQueryParams;
+  readonly reporter: Reporter;
+  readonly queryParams: SuiteQueryParams;
 
   /**
    * The only argument that the base implementation receives is an array of
    * the specs it consists of, in the order that they should be invoked.
    */
-  constructor(specs: Spec[] = []) {
+  constructor(specs: Spec[] = [], reporter: Reporter = new ConsoleReporter()) {
     this.specs = specs;
+    this.reporter = reporter;
 
     const queryParams: SuiteQueryParams = {};
     if (window.location != null && window.location.search != null) {
@@ -90,7 +91,9 @@ export class Suite {
         ? JSON.parse(queryParams.testrunner_suite_address) as SuiteAddress
         : null;
 
-    this.isMuted = 'testrunner_muted' in queryParams;
+    if ('testrunner_disable_reporting' in queryParams) {
+      this.reporter.disabled = true;
+    }
   }
 
   /**
@@ -145,75 +148,63 @@ export class Suite {
    * for a given test to run as an argument.
    */
   async run() {
-    if (this.address) {
-      const test = this.getTestByAddress(this.address);
+    const { reporter, address } = this;
+    const soloTest = address ? this.getTestByAddress(address) : null;
+    const soloSpec = address ? this.specs[address.spec] : null;
 
-      if (test != null) {
-        await this.testRun(test);
+    reporter.dispatchEvent(ReporterEvent.suiteStart, this);
+
+    for (const spec of this.specs) {
+      reporter.dispatchEvent(ReporterEvent.specStart, spec, this);
+
+      if (soloSpec != null && spec !== soloSpec) {
+        continue;
       }
-    } else {
-      for (let i = 0; i < this.specs.length; ++i) {
-        const spec = this.specs[i];
 
-        if (!this.isMuted) {
-          console.log(`%c ${spec.rootTopic!.description} `,
-              `background-color: #bef; color: #246;
-              font-weight: bold; font-size: 24px;`);
+      for (const test of spec) {
+        if (soloTest != null && test !== soloTest) {
+          continue;
         }
 
-        await this.topicRun(spec.rootTopic!, i);
+        reporter.dispatchEvent(ReporterEvent.testStart, test, this);
+
+        const result = await test.run(this);
+
+        reporter.dispatchEvent(ReporterEvent.testEnd, result, test, this);
       }
+
+      reporter.dispatchEvent(ReporterEvent.specEnd, spec, this);
     }
+
+    reporter.dispatchEvent(ReporterEvent.suiteEnd, this);
   }
 
-  protected async topicRun(topic: Topic,
-      specIndex: number,
-      topicAddress: number[] = []) {
-    for (let i = 0; i < topic.tests.length; ++i) {
-      const address: SuiteAddress = {
-        spec: specIndex,
-        topic: topicAddress,
-        test: i
-      };
+  /**
+   * The total number of tests in suite, including in all spec topics and their
+   * sub-topics.
+   */
+  get totalTestCount() {
+    let count = 0;
 
-      const test = this.getTestByAddress(address);
-
-      if (test != null) {
-        await this.testRun(test);
-      }
+    for (const spec of this.specs) {
+      count += spec.totalTestCount;
     }
 
-    for (let i = 0; i < topic.topics.length; ++i) {
-      topicAddress.push(i);
-      await this.topicRun(topic.topics[i], specIndex, topicAddress);
-      topicAddress.pop();
-    }
+    return count;
   }
 
-  protected async testRun(test: Test) {
-    if (test == null) {
-      throw new Error('No test found!');
-    }
+  /**
+   * Iterate over all tests in the suite.
+   */
+  *[Symbol.iterator](): IterableIterator<Test> {
+    const { specs } = this;
 
-    const result = await test.run(this);
+    for (let i = 0; i < specs.length; ++i) {
+      const spec = specs[i];
 
-    if (!this.isMuted) {
-      // TODO(cdata): This should all be moved to an external reporter
-      const resultString = result.passed ? ' PASSED ' : ' FAILED ';
-      const resultColor = result.passed ? 'green' : 'red';
-
-      const resultLog = [`${test.behaviorText}... %c${resultString}`,
-          `color: #fff; font-weight: bold; background-color: ${resultColor}`];
-
-      if ((test as any).isolated) {
-        resultLog[0] = `%c ISOLATED %c ${resultLog[0]}`;
-        resultLog.splice(1, 0,
-            `background-color: #fd0; font-weight: bold; color: #830`, ``);
+      for (const test of spec) {
+        yield test;
       }
-
-      console.log(...resultLog);
     }
-
-    window.top.postMessage(cloneableResult(result), window.location.origin);
   }
 }
