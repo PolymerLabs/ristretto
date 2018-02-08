@@ -9,9 +9,11 @@
   <script type="module">
     import { Suite } from './lib/suite.js';
     import { utilSpec } from './lib/util-spec.js';
+    import { topicSpec } from './lib/topic-spec.js';
 
     const suite = new Suite([
-      utilSpec
+      utilSpec,
+      topicSpec
     ]);
 
     suite.run();

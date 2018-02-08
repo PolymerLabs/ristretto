@@ -39,7 +39,23 @@ describe('util', () => {
         }
 
         expect(threw).to.be.equal(true);
-      }, { timeLimit: 1000 });
+      });
+
+      describe('and then cancelled', () => {
+        it('does not throw', async () => {
+          let threw = false;
+
+          try {
+            const limit = timeLimit(100);
+            limit.cancel();
+            await timePasses(150);
+          } catch (e) {
+            threw = true;
+          }
+
+          expect(threw).to.be.equal(false);
+        });
+      });
     });
   });
 
@@ -50,6 +66,7 @@ describe('util', () => {
           ...context,
           result: { passed: true, error: false }
         }));
+
         describe('without an error object', () => {
           it('returns the same result', ({ result }: any) => {
             expect(cloneableResult(result)).to.be.equal(result);
