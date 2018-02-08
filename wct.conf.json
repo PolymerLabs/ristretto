@@ -1,0 +1,8 @@
+{
+  "suites": ["test/index.js"],
+  "extraScripts": [
+    "test/wct-bundle.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.4/socket.io.js"
+  ],
+  "environmentImports": []
+}
