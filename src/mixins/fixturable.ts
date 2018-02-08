@@ -141,7 +141,12 @@ export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation:
  */
 export interface FixturedSpec {
   fixture: Function;
+  before: Function;
+  setup: Function;
+
   cleanup: Function;
+  after: Function;
+  teardown: Function;
 }
 
 export type FixtureFunction = (context: object) => any;
