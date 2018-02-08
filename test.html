@@ -11,11 +11,13 @@
     import { utilSpec } from './lib/util-spec.js';
     import { topicSpec } from './lib/topic-spec.js';
     import { testSpec } from './lib/test-spec.js';
+    import { suiteSpec } from './lib/suite-spec.js';
 
     const suite = new Suite([
       utilSpec,
       topicSpec,
-      testSpec
+      testSpec,
+      suiteSpec
     ]);
 
     suite.run();
