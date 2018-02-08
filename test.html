@@ -10,10 +10,12 @@
     import { Suite } from './lib/suite.js';
     import { utilSpec } from './lib/util-spec.js';
     import { topicSpec } from './lib/topic-spec.js';
+    import { testSpec } from './lib/test-spec.js';
 
     const suite = new Suite([
       utilSpec,
-      topicSpec
+      topicSpec,
+      testSpec
     ]);
 
     suite.run();
