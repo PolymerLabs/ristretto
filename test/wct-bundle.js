@@ -5,14 +5,26 @@
 
   window.WCT = window.WCT || {};
   window.WCT.loadSuites = async function(files) {
+    // import required library components
     const {WCTReporter} = await import('../lib/reporters/wct-reporter.js');
-    const {Suite} = await import ('../lib/suite.js');
+    const {Suite, Spec} = await import ('../lib/index.js');
     // only use JS files for now
     let scripts = files.filter((f) => f.slice('-2') === 'js');
     // import all the "suites" as JS modules
-    let modules = await Promise.all(scripts.map(s => import(new URL(s, rootUrl).href)));
-    // map the module to the spec from the module
-    let specs = modules.map(m => m.spec);
+    let modules = await Promise.all(
+      scripts.map(
+        (s) => import(new URL(s, rootUrl).href)
+      )
+    );
+    // map the module object to the exported specs
+    let specs = [];
+    modules.forEach((m) => {
+      Object.keys(m).forEach((s) => {
+        if (m[s] instanceof Spec) {
+          specs.push(m[s]);
+        }
+      });
+    });
     // If isolated, just run it
     if (rootUrl.searchParams.has('testrunner_isolated')) {
       new Suite(specs).run();
@@ -25,7 +37,7 @@
         socket.off();
         // Start tests
         new Suite(specs, new WCTReporter(socket)).run();
-      })
+      });
     }
   };
 })();

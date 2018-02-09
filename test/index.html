@@ -1,2 +1,7 @@
 <!doctype html>
-<script type="module" src="index.js"></script>
+<script type="module">
+  import {spec} from './index.js';
+  import {Suite} from '../lib/index.js';
+
+  new Suite([spec]).run();
+</script>
