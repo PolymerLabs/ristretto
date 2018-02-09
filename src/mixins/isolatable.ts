@@ -130,7 +130,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
 
     protected async receiveMessagePort(): Promise<MessagePort> {
       // Step 3: the isolated context notifies that it is ready to proceed:
-      window.postMessage(IsolatedTestMessage.ready, window.location.origin);
+      window.parent.postMessage(IsolatedTestMessage.ready, window.location.origin);
 
       return new Promise(resolve => {
         const receiveMessage = (event: MessageEvent) => {
