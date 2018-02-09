@@ -48,7 +48,7 @@ export interface TestResult {
   behaviorText: string;
   config: TestConfig;
   passed: boolean;
-  error: boolean | Error | { stack: string | void };
+  error?: Error | { stack: string | void };
 };
 
 /**
@@ -202,7 +202,7 @@ export class Test {
     try {
       const { implementation } = context;
       await implementation();
-      return { ...partialResult, passed: true, error: false };
+      return { ...partialResult, passed: true };
     } catch (error) {
       return { ...partialResult, passed: false, error };
     } finally {
