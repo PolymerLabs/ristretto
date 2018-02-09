@@ -6,5 +6,8 @@ const {describe, it} = spec;
 describe('test-runner tests', () => {
   it('normal', () => {});
   it('isolated', () => {
-  }, {isolated: true})
+  }, {isolated: true});
+  it('intential delay', () => {
+    return new Promise(() => {});
+  })
 });

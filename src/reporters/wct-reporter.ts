@@ -81,11 +81,13 @@ export class WCTReporter extends Reporter {
   }
 
   onTestEnd(result: TestResult, test: Test, _suite: Suite) {
+    // WCT is expecting the error stack as the "error" field
+    const error: string = result.error && (result.error as Error).stack || '';
     this.emit('test-end', {
       state: getState(result),
       test: [test.behaviorText],
       duration: performance.now() - this.testStart,
-      error: result.error
+      error
     });
   }
 }
