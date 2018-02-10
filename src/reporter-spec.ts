@@ -15,6 +15,7 @@
 import { Spec } from './spec.js';
 import { Reporter, ReporterEvent } from './reporter.js';
 import { Fixturable } from './mixins/fixturable.js';
+import { spy } from './util.js';
 import '../../../chai/chai.js';
 
 const spec = new (Fixturable(Spec))();
@@ -34,29 +35,9 @@ describe('Reporter', () => {
         }
       }
 
-      const spy = () => {
-        let callCount = 0;
-        const callArgs: any[] = [];
-        const method = (...args: any[]) => {
-          callArgs.push(args);
-          callCount++;
-        };
-
-        Object.defineProperty(method, 'args', { get() { return callArgs; } });
-        Object.defineProperty(method, 'callCount', {
-          get() {
-            return callCount;
-          }
-        });
-
-        return method;
-      };
-
       Object.keys(ReporterEvent).forEach((key: string) => {
         const event = (ReporterEvent as any)[key];
-        Object.defineProperty(TestReporter.prototype, `on${event}`, {
-          value: spy()
-        });
+        spy(TestReporter.prototype, `on${event}`);
       });
 
       return {

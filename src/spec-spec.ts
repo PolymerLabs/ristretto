@@ -13,36 +13,43 @@
  */
 
 import { Spec } from './spec.js';
-import { Fixturable } from './mixins/fixturable.js';
+import { Fixturable, FixturedSpec } from './mixins/fixturable.js';
+import { Constructor } from './util.js';
 import '../../../chai/chai.js';
+
+const { expect } = (self as any).chai;
+
+export const describeSpecSpec =
+    (specToExtend: Spec & FixturedSpec, Spec: Constructor<Spec>) => {
+  const { describe, it, before } = specToExtend;
+
+  describe('Spec', () => {
+    describe('with topics and tests', () => {
+      before((context: any) => {
+        const spec = new Spec();
+        const { describe, it } = spec;
+
+        describe('a spec', () => {
+          it('has a test', () => {});
+          describe('nested topic', () => {
+            it('also has a test', () => {});
+            it('may have another test', () => {});
+          });
+          it('may include trailing tests', () => {});
+        });
+
+        return { ...context, spec };
+      });
+
+      it('counts the total tests in all topics', ({ spec }: any) => {
+        expect(spec.totalTestCount).to.be.equal(4);
+      });
+    });
+  });
+};
 
 const spec = new (Fixturable(Spec))();
 
-const { expect } = (self as any).chai;
-const { describe, it, before } = spec;
-
-describe('Spec', () => {
-  describe('with topics and tests', () => {
-    before((context: any) => {
-      const spec = new Spec();
-      const { describe, it } = spec;
-
-      describe('a spec', () => {
-        it('has a test', () => {});
-        describe('nested topic', () => {
-          it('also has a test', () => {});
-          it('may have another test', () => {});
-        });
-        it('may include trailing tests', () => {});
-      });
-
-      return { ...context, spec };
-    });
-
-    it('counts the total tests in all topics', ({ spec }: any) => {
-      expect(spec.totalTestCount).to.be.equal(4);
-    });
-  });
-});
+describeSpecSpec(spec, Spec);
 
 export const specSpec: Spec = spec;
