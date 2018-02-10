@@ -52,6 +52,10 @@ describe('Isolatable', () => {
     });
   });
 
+  // TODO(cdata): It will probably take specialty testing to more thoroughly
+  // test isolation. The current strategy for isolating tests in the browser
+  // is not compatible with a spec being run within another spec.
+
   describeSpecSpec(spec, IsolatableSpec);
 });
 
