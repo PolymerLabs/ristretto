@@ -26,6 +26,14 @@ export interface IsolatedTestConfig extends TestConfig {
   isolated?: boolean;
 }
 
+export interface IsolatedTestResult extends TestResult {
+  isolated?: boolean;
+}
+
+export interface IsolatedTestRunContext extends TestRunContext {
+  isolated?: boolean;
+}
+
 export interface IsolatedTest {
   readonly isolated: boolean;
 }
@@ -96,7 +104,8 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
       return result;
     }
 
-    protected async windUp(context: TestRunContext): Promise<TestRunContext> {
+    protected async windUp(context: TestRunContext)
+        : Promise<IsolatedTestRunContext> {
       const { suite } = context;
       const { queryParams } = suite;
       const isIsolated = 'testrunner_isolated' in queryParams;
@@ -105,7 +114,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
       context = await super.windUp(context);
 
       if (!shouldBeIsolated || isIsolated) {
-        return context;
+        return { ...context, isolated: false };
       }
 
       // Step 1: replace the implementation with one that generates an isolated
@@ -124,8 +133,14 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
 
       return {
         ...context,
+        isolated: true,
         implementation
       };
+    }
+
+    protected async postProcess(context: IsolatedTestRunContext,
+        result: TestResult) : Promise<IsolatedTestResult> {
+      return { ...result, isolated: context.isolated };
     }
 
     protected async receiveMessagePort(): Promise<MessagePort> {
