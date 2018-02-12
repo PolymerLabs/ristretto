@@ -15,14 +15,14 @@
 import { Spec } from './spec.js';
 import { Fixturable } from './mixins/fixturable.js';
 import { Suite } from './suite.js';
-import { Test } from './test.js';
+import { Test, TestResult, TestRunContext } from './test.js';
 import { timePasses } from './util.js';
 import '../../../chai/chai.js';
 
 const spec = new (Fixturable(Spec))();
 
 const { expect } = (self as any).chai;
-const { describe, it, before } = spec;
+const { describe, it, before, after } = spec;
 
 describe('Test', () => {
   before((context: any) => {
@@ -45,9 +45,38 @@ describe('Test', () => {
     expect(test.run(suite)).to.be.instanceof(Promise);
   });
 
-  it('invokes the implementation when run', async ({ test, testSpy, suite }: any) => {
-    await test.run(suite);
-    expect(testSpy.runCount).to.be.equal(1);
+  it('invokes the implementation when run',
+      async ({ test, testSpy, suite }: any) => {
+        await test.run(suite);
+        expect(testSpy.runCount).to.be.equal(1);
+      });
+
+  describe('postProcess', () => {
+    before((context: any) => {
+      const originalPostProcess = (Test as any).prototype.postProcess;
+
+      Object.defineProperty(Test.prototype, 'postProcess', {
+        value: (_context: TestRunContext, result: TestResult) => {
+          return { ...result, special: true };
+        }
+      });
+
+      return {
+        ...context,
+        originalPostProcess
+      };
+    });
+
+    after(({ originalPostProcess }: any) => {
+      Object.defineProperty(Test.prototype,
+          'postProcess', { value: originalPostProcess });
+    });
+
+    it('manipulates the TestResult after the test is run',
+        async ({ test, suite }: any) => {
+          const result = await test.run(suite);
+          expect(result.special).to.be.equal(true);
+        });
   });
 
   describe('when timing out', () => {
