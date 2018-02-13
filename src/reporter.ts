@@ -30,15 +30,6 @@ export enum ReporterEvent {
   unexpectedError = 'UnexpectedError'
 };
 
-type ReporterEventMethod =
-  'onSuiteStart' |
-  'onSuiteEnd' |
-  'onSpecStart' |
-  'onSpecEnd' |
-  'onTestStart' |
-  'onTestEnd' |
-  'onUnexpectedError';
-
 /**
  * A reporter is an object that implements some callbacks associated with
  * reporting lifecycle stages of interest. The default reporter has none
@@ -56,12 +47,12 @@ export abstract class Reporter {
    * Dispatches an event's details to the appropriate lifecycle callback.
    */
   report(eventName: ReporterEvent, ...args: any[]): boolean {
-    const methodName = `on${eventName}` as ReporterEventMethod;
+    const methodName = `on${eventName}` as keyof this;
 
     if (this.disabled || this[methodName] == null) {
       return false;
     }
-    // TODO(dfreedm): make a argument mapping for each method of the reporter
+    // TODO(dfreedm): make a argument mapping for each method of the reporter, someday
     (this[methodName] as any)(...args);
     return true;
   }
