@@ -76,7 +76,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
       return !!(this.config && this.config.isolated);
     }
 
-    protected config: IsolatedTestConfig;
+    protected config!: IsolatedTestConfig;
 
     /**
      * An isolated test run must post its results to the parent frame in order

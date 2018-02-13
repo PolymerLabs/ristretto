@@ -34,7 +34,7 @@ export interface FixturedTest {
  */
 export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T) {
   return class extends TestImplementation {
-    readonly topic: Topic & FixturedTopic;
+    readonly topic!: Topic & FixturedTopic;
 
     /**
      * When winding up, a fixtured context is generated from a topic, and
@@ -92,7 +92,7 @@ export interface FixturedTopic {
  */
 export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation: T) {
   return class extends TopicImplementation {
-    parentTopic: (Topic & FixturedTopic) | void;
+    parentTopic!: (Topic & FixturedTopic) | void;
 
     readonly fixtures: Function[] = [];
     readonly cleanups: Function[] = [];
@@ -216,8 +216,8 @@ export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S)
     after: Function;
     teardown: Function;
 
-    rootTopic: (Topic & FixturedTopic) | null;
-    protected currentTopic: (Topic & FixturedTopic) | null;
+    rootTopic!: (Topic & FixturedTopic) | null;
+    protected currentTopic!: (Topic & FixturedTopic) | null;
 
     /**
      * The `Topic` implementation used by a fixture-capable spec requires
