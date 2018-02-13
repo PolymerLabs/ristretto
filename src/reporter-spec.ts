@@ -15,7 +15,7 @@
 import { Spec } from './spec.js';
 import { Reporter, ReporterEvent } from './reporter.js';
 import { Fixturable } from './mixins/fixturable.js';
-import { spy } from './util.js';
+import { spy } from './helpers/spy.js';
 import '../../../chai/chai.js';
 
 const spec = new (Fixturable(Spec))();
