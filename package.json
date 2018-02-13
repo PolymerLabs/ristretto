@@ -4,16 +4,19 @@
   "license": "BSD-3-Clause",
   "flat": true,
   "types": "lib/index.d.ts",
-  "main": "lib/index.js",
+  "main": "test-runner.js",
   "module": "lib/index.js",
   "devDependencies": {
     "@types/chai": "^4.1.2",
     "chai": "^4.1.2",
-    "typescript": "^2.7.1"
+    "rollup": "^0.55.5",
+    "typescript": "^2.6.2"
   },
   "scripts": {
     "build": "tsc",
-    "watch": "tsc -w"
+    "watch": "tsc -w",
+    "bundle": "rollup -c ./rollup.config.js",
+    "prepublishOnly": "npm run build && npm run bundle"
   },
   "description": "Test Runner is a module that does exactly what its name suggests: it runs tests.",
   "directories": {
