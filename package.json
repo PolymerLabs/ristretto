@@ -15,7 +15,8 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc -w",
-    "prepublishOnly": "rollup -c ./rollup.config.js"
+    "bundle": "rollup -c ./rollup.config.js",
+    "prepublishOnly": "npm run build && npm run bundle"
   },
   "description": "Test Runner is a module that does exactly what its name suggests: it runs tests.",
   "directories": {
