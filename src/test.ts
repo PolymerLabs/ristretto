@@ -19,7 +19,8 @@ import { ReporterEvent } from './reporter.js';
 
 /**
  * The basic test configuration object supports a timeout in milliseconds.
-  */
+ */
+// TODO(cdata): even timeout should be factored out as a mixin.
 export interface TestConfig {
   timeout?: number;
 }
@@ -45,8 +46,6 @@ export interface TestRunContext {
  * that case.
  */
 export interface TestResult {
-  behaviorText: string;
-  config: TestConfig;
   passed: boolean;
   error?: Error | { stack: string | void };
 };
@@ -148,6 +147,22 @@ export class Test {
   }
 
   /**
+   * Once a test `implementation` has run and the result has been measured,
+   * there is an opportunity to manipulate the result based on the
+   * `TestRunContext`. This is useful in cases where the context of the
+   * test run may have a specialized effect on the result of the test.
+   *
+   * For example, a test that has been "skipped" may technically have passed,
+   * but it may be desirable to mark the result of such a test as not passed,
+   * or to decorate the result with a flag indicating that the test had
+   * passed but had been skipped.
+   */
+  protected async postProcess(_context: TestRunContext, result: TestResult)
+      : Promise<TestResult> {
+    return result;
+  }
+
+  /**
    * When a test invokation has completed, there is a "wind-down" phase
    * that allows the `Test` class and any specializations to clean up the
    * `TestRunContext` that was created during the "wind-up" phase. The
@@ -163,12 +178,14 @@ export class Test {
   }
 
   /**
-   * The `run` method initiates a test run. A test run consists of three
+   * The `run` method initiates a test run. A test run consists of four
    * phases:
    *
    *  1. Wind-up phase, during which the `TestRunContext` is created.
    *  2. Test run phase, when the test `implementation` is invoked and measured.
-   *  3. Wind-down phase, during which the `TestRunContext` is cleaned up.
+   *  3. Post-process phase, where `TestResult` may be changed based on the
+   *  `TestRunContext`.
+   *  4. Wind-down phase, during which the `TestRunContext` is cleaned up.
    *
    * The "wind-up" and "wind-down" phases are described in detail by the
    * related `windUp` and `windDown` methods in this class.
@@ -180,33 +197,33 @@ export class Test {
    */
   async run(suite: Suite): Promise<TestResult> {
     const { reporter } = suite;
-    const partialResult = {
-      behaviorText: this.behaviorText,
-      config: this.config
-    };
 
-    let context;
+    let context: TestRunContext;
+    let result: TestResult;
 
     try {
       context = await this.windUp({
         suite,
         implementation: this.implementation
       });
+
+      try {
+        const { implementation } = context;
+        await implementation();
+        result = { passed: true };
+      } catch (error) {
+        result = { passed: false, error };
+      }
+
+      await this.windDown(context);
+      result = await this.postProcess(context, result!);
     } catch (error) {
       reporter.report(ReporterEvent.unexpectedError,
           'Error preparing test context.', error, suite);
 
-      return { ...partialResult, passed: false, error };
+      result = { passed: false, error };
     }
 
-    try {
-      const { implementation } = context;
-      await implementation();
-      return { ...partialResult, passed: true };
-    } catch (error) {
-      return { ...partialResult, passed: false, error };
-    } finally {
-      await this.windDown(context);
-    }
+    return result;
   }
 };

@@ -15,6 +15,7 @@
 import { Reporter } from '../reporter.js';
 import { Suite } from '../suite.js';
 import { Test, TestResult } from '../test.js';
+import { IsolatedTestResult } from '../mixins/isolatable.js';
 import { Spec } from '../spec.js';
 
 export class ConsoleReporter extends Reporter {
@@ -27,7 +28,6 @@ export class ConsoleReporter extends Reporter {
   }
 
   onTestEnd(result: TestResult, test: Test, _suite: Suite): void {
-    const { config } = result;
     const resultString = result.passed ? ' PASSED ' : ' FAILED ';
     const resultColor = result.passed ? 'green' : 'red';
     const resultLog = [
@@ -38,7 +38,7 @@ export class ConsoleReporter extends Reporter {
     // TODO(cdata): `isolated` is specific to `IsolatableTestConfig`. It would
     // be nice to generalize this somehow, perhaps with some kind of "flags"
     // array generated from the config or something.
-    if ((config as any).isolated) {
+    if ((result as IsolatedTestResult).isolated) {
       resultLog[0] = `%c ISOLATED %c ${resultLog[0]}`;
       resultLog.splice(1, 0,
           `background-color: #fd0; font-weight: bold; color: #830`, ``);
