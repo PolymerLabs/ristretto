@@ -1,6 +1,6 @@
 {
-  "name": "@0xcda7a/test-runner",
-  "version": "0.1.0",
+  "name": "@polymer/test-runner",
+  "version": "0.2.0",
   "license": "BSD-3-Clause",
   "flat": true,
   "types": "lib/index.d.ts",
@@ -9,6 +9,24 @@
   "devDependencies": {
     "@types/chai": "^4.1.2",
     "chai": "^4.1.2",
-    "typescript": "^2.6.2"
-  }
+    "typescript": "^2.7.1"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "description": "Test Runner is a module that does exactly what its name suggests: it runs tests.",
+  "directories": {
+    "lib": "lib"
+  },
+  "dependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PolymerLabs/test-runner.git"
+  },
+  "author": "The Polymer Authors",
+  "bugs": {
+    "url": "https://github.com/PolymerLabs/test-runner/issues"
+  },
+  "homepage": "https://github.com/PolymerLabs/test-runner#readme"
 }

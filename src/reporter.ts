@@ -52,8 +52,8 @@ export abstract class Reporter {
     if (this.disabled || this[methodName] == null) {
       return false;
     }
-
-    this[methodName](...args);
+    // TODO(dfreedm): make a argument mapping for each method of the reporter, someday
+    (this[methodName] as any)(...args);
     return true;
   }
 

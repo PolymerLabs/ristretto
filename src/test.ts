@@ -195,7 +195,7 @@ export class Test {
    * no exceptions are measured, the method returns a passing `TestResult`. If
    * an exception is measured, the method returns a non-passing `TestResult`.
    */
-  async run(suite: Suite): Promise<TestResult> {
+  async run(suite: Suite, ..._args: any[]): Promise<TestResult> {
     const { reporter } = suite;
 
     let context: TestRunContext;
