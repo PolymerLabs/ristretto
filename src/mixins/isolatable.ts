@@ -140,7 +140,8 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
 
     protected async postProcess(context: IsolatedTestRunContext,
         result: TestResult) : Promise<IsolatedTestResult> {
-      return { ...result, isolated: context.isolated };
+      const superResult = await super.postProcess(context, result);
+      return { ...superResult, isolated: context.isolated };
     }
 
     protected async receiveMessagePort(): Promise<MessagePort> {

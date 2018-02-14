@@ -24,6 +24,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     import { reporterSpec } from './lib/reporter-spec.js';
     import { isolatableSpec } from './lib/mixins/isolatable-spec.js';
     import { fixturableSpec } from './lib/mixins/fixturable-spec.js';
+    import { conditionalSpec } from './lib/mixins/conditional-spec.js';
 
     const suite = new Suite([
       utilSpec,
@@ -33,7 +34,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       specSpec,
       reporterSpec,
       isolatableSpec,
-      fixturableSpec
+      fixturableSpec,
+      conditionalSpec
     ]);
 
     suite.run();

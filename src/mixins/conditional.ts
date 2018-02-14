@@ -11,12 +11,11 @@
  * subject to an additional IP rights grant found at
  * http://polymer.github.io/PATENTS.txt
  */
-import { Suite } from '../suite.js';
+
 import { Spec } from '../spec.js';
 import { Topic } from '../topic.js';
 import { Test, TestRunContext, TestConfig, TestResult } from '../test.js';
 import { Constructor } from '../util';
-import { Reporter, ReporterEvent } from '../reporter';
 
 export interface ConditionalTestConfig extends TestConfig {
   condition?: () => boolean;
@@ -26,34 +25,50 @@ export interface ConditionalTestResult extends TestResult {
   skipped?: boolean;
 }
 
-export interface ConditionalTest {}
+export interface ConditionalTestRunContext extends TestRunContext {
+  skipped?: boolean;
+}
+
+export interface ConditionalTest {
+  readonly condition: () => boolean;
+}
 
 export function ConditionalTest<T extends Constructor<Test>>(TestImplementation: T) {
   return class extends TestImplementation {
-    protected config: ConditionalTestConfig;
+    protected config!: ConditionalTestConfig;
 
-    async run(suite: Suite, ...args: any[]): Promise<ConditionalTestResult> {
-      const { reporter } = suite;
-
-      if (this.config.condition) {
-        try {
-          const shouldRun = this.config.condition();
-          if (!shouldRun) {
-            return {
-              config: this.config,
-              behaviorText: this.behaviorText,
-              passed: false,
-              skipped: true
-            };
-          }
-        } catch (error) {
-          reporter.report(ReporterEvent.unexpectedError,
-            'Error checking conditions for test.', error, suite);
-        }
-      }
-      return super.run(suite, ...args);
+    /**
+     * True if the test should run.
+     */
+    get condition(): () => boolean {
+      return this.config.condition || (() => true);
     }
-  } as Constructor<Test & ConditionalTest>
+
+    protected async postProcess(context: ConditionalTestRunContext, result: TestResult): Promise<ConditionalTestResult> {
+      const superResult = await super.postProcess(context, result);
+      return {
+        ...superResult,
+        skipped: context.skipped,
+        passed: context.skipped ? false : superResult.passed
+      };
+    }
+
+    protected async windUp(context: TestRunContext): Promise<ConditionalTestRunContext> {
+      const skipped = !this.condition();
+      context = await super.windUp(context);
+      if (skipped) {
+        return {
+          ...context,
+          // provide a void implementation to "skip" the test
+          implementation: () => {},
+          skipped
+        };
+      } else {
+        return context;
+      }
+    }
+
+  } as Constructor<Test & ConditionalTest>;
 }
 
 export interface ConditionalTopic {}
@@ -68,7 +83,10 @@ export function ConditionalTopic<T extends Constructor<Topic>>(TopicImplementati
 
 export interface ConditionalSpec {}
 
-export function ConditionalSpec<T extends Constructor<Spec>>(SpecImplementation: T) {
+/**
+ * A conditional spec is an extension to `Spec` that allows individual tests to be conditionally run based on configuration.
+ */
+export function ConditionalSpec<S extends Constructor<Spec>>(SpecImplementation: S) {
   return class extends SpecImplementation {
     protected get TopicImplementation() {
       return ConditionalTopic(super.TopicImplementation);
