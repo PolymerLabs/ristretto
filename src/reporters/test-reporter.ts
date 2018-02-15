@@ -24,28 +24,13 @@ export interface SuiteResult {
 }
 
 export class TestReporter extends Reporter {
-  suiteResult: SuiteResult;
-
-  set disabled(_value: boolean) {
-  }
-  get disabled() {
-    return false;
-  }
-
-  constructor() {
-    super();
-    this.suiteResult = {
-      specResults: []
-    };
-  }
+  suiteResult: SuiteResult = {specResults: []};
 
   get results(): TestResult[] {
-    let results: TestResult[] = [];
-    if (this.suiteResult) {
-      for (const spec of this.suiteResult.specResults) {
-        for (const test of spec.testResults) {
-          results.push(test);
-        }
+    const results: TestResult[] = [];
+    for (const spec of this.suiteResult.specResults) {
+      for (const test of spec.testResults) {
+        results.push(test);
       }
     }
     return results;
