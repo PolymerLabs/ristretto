@@ -33,6 +33,18 @@ export interface ConditionalTest {
   readonly condition: () => boolean;
 }
 
+/**
+ * A conditional test is one that runs only if supplied conditions for the test are satisfied.
+ * In particular, ConditionalTest adds a `condition` configuration property as a function that returns `true` or `false`.
+ * If `condition` returns `true`, the test will run, and if it returns `false`, the test will not run.
+ *
+ * Example:
+ * ```javascript
+ * describe('a topic with conditions', () => {
+ *   it('a conditional test', () => {}, {condition: () => {...}}
+ * });
+ * ```
+ */
 export function ConditionalTest<T extends Constructor<Test>>(TestImplementation: T) {
   return class extends TestImplementation {
     protected config!: ConditionalTestConfig;
@@ -84,7 +96,9 @@ export function ConditionalTopic<T extends Constructor<Topic>>(TopicImplementati
 export interface ConditionalSpec {}
 
 /**
- * A conditional spec is an extension to `Spec` that allows individual tests to be conditionally run based on configuration.
+ * A conditional spec is an extension to `Spec` that allows
+ * individual tests to be conditionally run based on a
+ * `condition` function in the test config.
  */
 export function ConditionalSpec<S extends Constructor<Spec>>(SpecImplementation: S) {
   return class extends SpecImplementation {

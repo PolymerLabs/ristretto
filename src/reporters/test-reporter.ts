@@ -23,9 +23,23 @@ export interface SuiteResult {
   specResults: SpecResult[];
 }
 
+/**
+ * TestReporter provides a Reporter that accumulates test results
+ * from a Suite run into the `results` property as an array.
+ */
 export class TestReporter extends Reporter {
   suiteResult: SuiteResult = {specResults: []};
 
+  /**
+   * An array of test results from the Suite run.
+   * Example:
+   * ```js
+   * const reporter = new TestReporter();
+   * const suite = new Suite([spec], reporter);
+   * await suite.run();
+   * console.log(reporter.results);
+   * ```
+   */
   get results(): TestResult[] {
     const results: TestResult[] = [];
     for (const spec of this.suiteResult.specResults) {
