@@ -26,6 +26,8 @@ export interface SuiteResult {
 /**
  * TestReporter provides a Reporter that accumulates test results
  * from a Suite run into the `results` property as an array.
+ *
+ * This is intended to be used for testing mixins that modify test results.
  */
 export class TestReporter extends Reporter {
   suiteResult: SuiteResult = {specResults: []};

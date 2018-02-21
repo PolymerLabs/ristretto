@@ -34,9 +34,12 @@ export interface ConditionalTest {
 }
 
 /**
- * A conditional test is one that runs only if supplied conditions for the test are satisfied.
- * In particular, ConditionalTest adds a `condition` configuration property as a function that returns `true` or `false`.
- * If `condition` returns `true`, the test will run, and if it returns `false`, the test will not run.
+ * A conditional test is one that runs only if supplied conditions for the test
+ * are satisfied.
+ * In particular, ConditionalTest adds a `condition` configuration property as a
+ * function that returns `true` or `false`.
+ * If `condition` returns `true`, the test will run, and if it returns `false`,
+ * the test will not run.
  *
  * Example:
  * ```javascript
