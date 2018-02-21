@@ -16,6 +16,7 @@ import { Reporter } from '../reporter.js';
 import { Suite } from '../suite.js';
 import { Test, TestResult } from '../test.js';
 import { IsolatedTestResult } from '../mixins/isolatable.js';
+import { ConditionalTestResult } from '../mixins/conditional.js';
 import { Spec } from '../spec.js';
 
 export class ConsoleReporter extends Reporter {
@@ -28,8 +29,20 @@ export class ConsoleReporter extends Reporter {
   }
 
   onTestEnd(result: TestResult, test: Test, _suite: Suite): void {
-    const resultString = result.passed ? ' PASSED ' : ' FAILED ';
-    const resultColor = result.passed ? 'green' : 'red';
+    let resultString: string;
+    let resultColor: string;
+
+    if (result.passed) {
+      resultString = ' PASSED ';
+      resultColor = 'green';
+    } else if ((result as ConditionalTestResult).skipped) {
+      resultString = ' SKIPPED ';
+      resultColor = 'yellow';
+    } else {
+      resultString = ' FAILED ';
+      resultColor = 'red';
+    }
+
     const resultLog = [
       `${test.behaviorText}... %c${resultString}`,
       `color: #fff; font-weight: bold; background-color: ${resultColor}`
