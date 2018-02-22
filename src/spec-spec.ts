@@ -14,20 +14,18 @@
 
 import { Spec } from './spec.js';
 import { Fixturable, FixturedSpec } from './mixins/fixturable.js';
-import { Constructor } from './util.js';
 import '../../../chai/chai.js';
 
 const { expect } = (self as any).chai;
 
 export const describeSpecSpec =
-    (specToExtend: Spec & FixturedSpec, Spec: Constructor<Spec>) => {
+    (specToExtend: Spec & FixturedSpec, specToTest: Spec) => {
   const { describe, it, before } = specToExtend;
 
   describe('Spec', () => {
     describe('with topics and tests', () => {
       before((context: any) => {
-        const spec = new Spec();
-        const { describe, it } = spec;
+        const { describe, it } = specToTest;
 
         describe('a spec', () => {
           it('has a test', () => {});
@@ -38,7 +36,7 @@ export const describeSpecSpec =
           it('may include trailing tests', () => {});
         });
 
-        return { ...context, spec };
+        return { ...context, spec: specToTest };
       });
 
       it('counts the total tests in all topics', ({ spec }: any) => {
@@ -48,8 +46,8 @@ export const describeSpecSpec =
   });
 };
 
-const spec = new (Fixturable(Spec))();
+const spec = Spec.create<FixturedSpec>(Fixturable);
 
-describeSpecSpec(spec, Spec);
+describeSpecSpec(spec, Spec.create());
 
 export const specSpec: Spec = spec;

@@ -15,26 +15,46 @@
 import { Spec } from '../spec.js';
 import { Test, TestRunContext } from '../test.js';
 import { Topic } from '../topic.js';
-import { Constructor } from '../util.js';
+import { TestRunnerDomainExtender } from '../util.js';
 
-/**
- * FixturedTest
- */
 export interface FixturedTestRunContext extends TestRunContext {
   fixtureContext?: any
 };
 
-export interface FixturedTest {
-  readonly topic: Topic & FixturedTopic;
-};
+export type FixtureFunction = (context: object) => any;
+export type CleanupFunction = (context: object) => void;
 
-/**
- * Decorates a `Test` implementation with the necessary "wind-up" and
- * "wind-down" behavior to support fixtured contexts in tests.
- */
-export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T) {
-  return class extends TestImplementation {
-    readonly topic!: Topic & FixturedTopic;
+export interface FixturedSpec extends Spec {
+  fixture: Function;
+  before: Function;
+  setup: Function;
+
+  cleanup: Function;
+  after: Function;
+  teardown: Function;
+}
+
+export interface FixturedTopic extends Topic {
+  readonly fixtures: FixtureFunction[];
+  readonly cleanups: CleanupFunction[];
+
+  createContext(): object;
+  disposeContext(context: object): void;
+}
+
+export interface FixturedTest extends Test {
+  readonly topic: Topic & FixturedTopic;
+}
+
+export const Fixturable: TestRunnerDomainExtender<FixturedSpec, FixturedTopic, FixturedTest> =
+        ({ Spec, Topic, Test }) => {
+
+  /**
+   * Decorates a `Test` implementation with the necessary "wind-up" and
+   * "wind-down" behavior to support fixtured contexts in tests.
+   */
+  class FixturedTest extends Test {
+    readonly topic!: FixturedTopic | void;
 
     /**
      * When winding up, a fixtured context is generated from a topic, and
@@ -70,40 +90,19 @@ export function FixturedTest<T extends Constructor<Test>>(TestImplementation: T)
         topic.disposeContext(fixtureContext);
       }
     }
-  } as Constructor<Test & FixturedTest>;
-};
+  }
 
 
-/**
- * FixturedTopic
- */
-export interface FixturedTopic {
-  readonly fixtures: Function[];
-  readonly cleanups: Function[];
-
-  createContext(): object;
-  disposeContext(context: object): void;
-}
-
-/**
- * Decorates a `Topic` with the implementation necessary to support describing
- * fixture steps and cleanup steps on a test, and generating a fixtured context
- * from those steps.
- */
-export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation: T) {
-  return class extends TopicImplementation {
-    parentTopic!: (Topic & FixturedTopic) | void;
+  /**
+   * Decorates a `Topic` with the implementation necessary to support describing
+   * fixture steps and cleanup steps on a test, and generating a fixtured context
+   * from those steps.
+   */
+  class FixturedTopic extends Topic {
+    parentTopic!: FixturedTopic | void;
 
     readonly fixtures: Function[] = [];
     readonly cleanups: Function[] = [];
-
-    /**
-     * The `Test` implementation used for fixture-capable `Topic`s has to
-     * include its own specialized fixture-capable implementation.
-     */
-    get TestImplementation() {
-      return FixturedTest(super.TestImplementation);
-    }
 
     /**
      * Generates a fixture context by generating its parent `Topic`'s fixture
@@ -133,33 +132,15 @@ export function FixturedTopic<T extends Constructor<Topic>>(TopicImplementation:
         this.parentTopic.disposeContext(context);
       }
     }
-  } as Constructor<Topic & FixturedTopic>;
-}
+  }
 
-/**
- * FixturedSpec
- */
-export interface FixturedSpec {
-  fixture: Function;
-  before: Function;
-  setup: Function;
 
-  cleanup: Function;
-  after: Function;
-  teardown: Function;
-}
-
-export type FixtureFunction = (context: object) => any;
-export type CleanupFunction = (context: object) => void;
-
-/**
- * Decorates a `Spec` implementation with the necessary behavior to support
- * fixtures in tests. For the `Spec`, this primarily consists of adding two
- * new "tear-off" methods: `fixture` and `cleanup`.
- */
-export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S) {
-  return class extends SpecImplementation {
-
+  /**
+   * Decorates a `Spec` implementation with the necessary behavior to support
+   * fixtures in tests. For the `Spec`, this primarily consists of adding two
+   * new "tear-off" methods: `fixture` and `cleanup`.
+   */
+  class FixturedSpecImplementation extends Spec {
     /**
      * The `fixture` method is one of two added "tear-off" methods offered in
      * the fixture implementation for `Spec`. Invoking `fixture` causes a
@@ -219,14 +200,6 @@ export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S)
     rootTopic!: (Topic & FixturedTopic) | null;
     protected currentTopic!: (Topic & FixturedTopic) | null;
 
-    /**
-     * The `Topic` implementation used by a fixture-capable spec requires
-     * the special behavior added by the `FixturedTopic` mixin.
-     */
-    protected get TopicImplementation() {
-      return FixturedTopic(super.TopicImplementation);
-    }
-
     constructor(...args: any[]) {
       super(...args);
 
@@ -244,11 +217,12 @@ export function FixturedSpec<S extends Constructor<Spec>>(SpecImplementation: S)
             }
           };
     }
-  } as Constructor<Spec & FixturedSpec>;
-}
+  }
 
-/**
- * This is an alias for the `FixturedSpec` mixin, added for convenience and
- * subjective readability for spec authors.
- */
-export const Fixturable = FixturedSpec;
+  return {
+    Spec: FixturedSpecImplementation,
+    Topic: FixturedTopic,
+    Test: FixturedTest
+  };
+};
+

@@ -14,11 +14,11 @@
 
 import { Spec } from './spec.js';
 import { Reporter, ReporterEvent } from './reporter.js';
-import { Fixturable } from './mixins/fixturable.js';
+import { Fixturable, FixturedSpec } from './mixins/fixturable.js';
 import { spy } from './helpers/spy.js';
 import '../../../chai/chai.js';
 
-const spec = new (Fixturable(Spec))();
+const spec = Spec.create<FixturedSpec>(Fixturable);
 
 const { expect } = (self as any).chai;
 const { describe, it, before } = spec;

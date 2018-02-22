@@ -12,7 +12,9 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import { TestResult } from './test.js';
+import { Test, TestResult } from './test.js';
+import { Spec } from './spec.js';
+import { Topic } from './topic.js';
 
 export interface TimeLimitContext {
   promise: Promise<any>;
@@ -79,3 +81,23 @@ export const cloneableResult = (result: TestResult): TestResult => {
  * mixins. See src/mixins/fixturable.ts for an example of usage.
  */
 export type Constructor<T=object> = { new(...args: any[]): T };
+
+export interface TestRunnerDomain
+    <S extends Spec, T extends Topic, U extends Test> {
+  Spec: Constructor<S>;
+  Topic: Constructor<T>;
+  Test: Constructor<U>;
+};
+
+export interface ExtendedTestRunnerDomain
+    <S extends Spec, T extends Topic, U extends Test, MS = {}, MT = {}, MU = {}>
+        extends TestRunnerDomain<Spec, Topic, Test> {
+  Spec: Constructor<MS & S>;
+  Topic: Constructor<T & MT>;
+  Test: Constructor<U & MU>;
+}
+
+export type TestRunnerDomainExtender<MS, MT, MU> =
+    <S extends Spec, T extends Topic, U extends Test>({ Spec, Topic, Test }
+        : TestRunnerDomain<S, T, U>) =>
+            ExtendedTestRunnerDomain<S, T, U, MS, MT, MU>;

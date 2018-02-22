@@ -12,16 +12,11 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import { Constructor, cloneableResult } from '../util.js';
-import { Suite } from '../suite.js';
-import { Spec } from '../spec.js';
-import { Topic } from '../topic.js';
+import { cloneableResult, TestRunnerDomainExtender } from '../util.js';
+import { Suite, SuiteAddress } from '../suite.js';
 import { Test, TestRunContext, TestConfig, TestResult } from '../test.js';
-import { SuiteAddress } from '../suite.js';
 
-/**
- * IsolatedTest
- */
+
 export interface IsolatedTestConfig extends TestConfig {
   isolated?: boolean;
 }
@@ -43,32 +38,34 @@ enum IsolatedTestMessage {
   ready = 'TestrunnerIsolatedTestReady'
 }
 
-/**
- * An isolated test is one that runs in a "clean room" context. Currently, this
- * means running in an iframe in a browser. This is useful to help test authors
- * control for global state that persists across test runs (for example, custom
- * element registration).
- *
- * For test runs isolated by iframes, the following steps are taken:
- *
- *  1. On wind-up, if the test is to be isolated, the implementation is replaced
- *  by one that generates an iframe pointing to the same URL but with specially
- *  crafted query params that inform the suite to run only one test, and informs
- *  the test that it is running in an isolated context.
- *  2. The test implementation is invoked in the main frame, causing an iframe
- *  (the isolated context) to be loaded.
- *  3. The test in the isolated frame notifies that it is ready to run.
- *  4. The test in the main frame posts a `MessagePort` to the test in the
- *  isolated frame.
- *  5. The test in the isolated frame receives the `MessagePort`, and invokes
- *  the actual test implementation.
- *  6. The test in the isolated frame posts the `TestResult` back through the
- *  `MessagePort` to the main frame.
- *  7. The test in the main frame resolves its implementation with the
- *  `TestResult` received from the isolated frame.
- */
-export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T) {
-  return class extends TestImplementation {
+export const Isolatable: TestRunnerDomainExtender<{}, {}, IsolatedTest> =
+    ({ Spec, Topic, Test }) => {
+  /**
+   * An isolated test is one that runs in a "clean room" context. Currently, this
+   * means running in an iframe in a browser. This is useful to help test authors
+   * control for global state that persists across test runs (for example, custom
+   * element registration).
+   *
+   * For test runs isolated by iframes, the following steps are taken:
+   *
+   *  1. On wind-up, if the test is to be isolated, the implementation is replaced
+   *  by one that generates an iframe pointing to the same URL but with specially
+   *  crafted query params that inform the suite to run only one test, and informs
+   *  the test that it is running in an isolated context.
+   *  2. The test implementation is invoked in the main frame, causing an iframe
+   *  (the isolated context) to be loaded.
+   *  3. The test in the isolated frame notifies that it is ready to run.
+   *  4. The test in the main frame posts a `MessagePort` to the test in the
+   *  isolated frame.
+   *  5. The test in the isolated frame receives the `MessagePort`, and invokes
+   *  the actual test implementation.
+   *  6. The test in the isolated frame posts the `TestResult` back through the
+   *  `MessagePort` to the main frame.
+   *  7. The test in the main frame resolves its implementation with the
+   *  `TestResult` received from the isolated frame.
+   */
+
+  class IsolatedTest extends Test {
     /**
      * True if the test is configured to be isolated.
      */
@@ -110,6 +107,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
       const { queryParams } = suite;
       const isIsolated = 'testrunner_isolated' in queryParams;
       const shouldBeIsolated = !!this.isolated;
+      const test: Test = this;
 
       context = await super.windUp(context);
 
@@ -208,43 +206,9 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
         iframe.src = url.toString();
       }) as Promise<TestResult>;
     }
-  } as Constructor<Test & IsolatedTest>
+  }
+
+  return { Spec, Topic, Test: IsolatedTest };
 };
 
 
-/**
- * IsolatedTopic
- */
-export interface IsolatedTopic {}
-
-/**
- * An isolated topic is a trivial extension of a `Topic` that mixes-in an
- * exstension to the `Topic`'s `Test` implementation.
- */
-export function IsolatedTopic<T extends Constructor<Topic>>(TopicImplementation: T) {
-  return class extends TopicImplementation {
-    protected get TestImplementation() {
-      return IsolatedTest(super.TestImplementation);
-    }
-  } as Constructor<Topic & IsolatedTopic>
-};
-
-
-/**
- * IsolatedSpec
- */
-export interface IsolatedSpec {}
-
-/**
- * An isolatable spec is a trivial extension of a `Spec` that mixes-in an
- * extension to the `Spec`'s `Topic` implementation.
- */
-export function IsolatedSpec<S extends Constructor<Spec>>(SpecImplementation: S) {
-  return class extends SpecImplementation {
-    protected get TopicImplementation() {
-      return IsolatedTopic(super.TopicImplementation);
-    }
-  } as Constructor<Spec & IsolatedSpec>
-};
-
-export const Isolatable = IsolatedSpec;

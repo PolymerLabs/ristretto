@@ -14,12 +14,11 @@
 
 import { Spec } from '../spec.js';
 import { Suite } from '../suite.js';
-import { Fixturable } from './fixturable.js';
+import { Fixturable, FixturedSpec } from './fixturable.js';
 import { describeSpecSpec } from '../spec-spec.js';
 import '../../../../chai/chai.js';
 
-const FixturableSpec = Fixturable(Spec);
-const spec = new FixturableSpec();
+const spec = Spec.create<FixturedSpec>(Fixturable);
 
 const { expect } = (self as any).chai;
 const { describe, it, before } = spec;
@@ -27,7 +26,7 @@ const { describe, it, before } = spec;
 describe('Fixturable', () => {
   before((context: any) => ({
     ...context,
-    spec: new FixturableSpec()
+    spec: Spec.create(Fixturable)
   }));
 
   describe('with tests and fixtures', () => {
@@ -87,7 +86,7 @@ describe('Fixturable', () => {
     });
   });
 
-  describeSpecSpec(spec, FixturableSpec);
+  describeSpecSpec(spec, Spec.create(Fixturable));
 });
 
 export const fixturableSpec: Spec = spec;

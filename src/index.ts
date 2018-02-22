@@ -12,18 +12,14 @@
  * http://polymer.github.io/PATENTS.txt
  */
 
-import { Spec } from './spec.js';
-import { Fixturable, FixturedSpec } from './mixins/fixturable.js';
-import { Isolatable, IsolatedSpec } from './mixins/isolatable.js';
-import { Constructor } from './util.js';
-
-const UberSpec: Constructor<FixturedSpec & IsolatedSpec & Spec> =
-    Fixturable(Isolatable(Spec));
-
-export { UberSpec as Spec, Spec as BasicSpec, Fixturable, Isolatable };
+export { Spec } from './spec.js';
 export { Suite } from './suite.js';
 export { Reporter } from './reporter.js';
 export { ConsoleReporter } from './reporters/console-reporter.js';
+
+export { Fixturable } from './mixins/fixturable.js';
+export { Isolatable } from './mixins/isolatable.js';
+
 export { timePasses, timeLimit } from './util.js';
 export { spy } from './helpers/spy.js';
 

@@ -13,6 +13,7 @@
  */
 
 import { Test, TestConfig } from './test.js';
+import { Constructor } from './util.js';
 
 /**
  * A `Topic` is created to hold a set of tests with related context. The
@@ -58,10 +59,6 @@ export class Topic {
    */
   readonly description: string;
 
-  protected get TestImplementation() {
-    return Test;
-  }
-
   /**
    * The `behaviorText` is the topic description appended to its parent topic
    * description. For nested topics, this leads to useful, human-readable chains
@@ -77,7 +74,8 @@ export class Topic {
    * A `Topic` receives a description, and an optional reference to a parent
    * topic.
    */
-  constructor(description: string, parentTopic?: Topic) {
+  constructor(description: string, parentTopic?: Topic,
+      protected TestImplementation: Constructor<Test> = Test) {
     this.description = description;
     this.parentTopic = parentTopic;
   }
@@ -87,7 +85,8 @@ export class Topic {
    * will automatically be parented to the current topic and returned.
    */
   addSubtopic(description: string): Topic {
-    const subtopic = new (<typeof Topic>this.constructor)(description, this);
+    const subtopic = new (<typeof Topic>this.constructor)(description, this,
+        this.TestImplementation);
     this.topics.push(subtopic);
     return subtopic;
   }

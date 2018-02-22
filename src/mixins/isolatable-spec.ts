@@ -15,20 +15,18 @@
 import { Spec } from '../spec.js';
 import { Suite } from '../suite.js';
 import { Isolatable } from './isolatable.js';
-import { Fixturable } from './fixturable.js';
+import { Fixturable, FixturedSpec } from './fixturable.js';
 import { describeSpecSpec } from '../spec-spec.js';
 import '../../../../chai/chai.js';
 
-const IsolatableSpec = Isolatable(Spec);
-const spec = new (Fixturable(Spec))();
-
+const spec = Spec.create<FixturedSpec>(Fixturable);
 const { expect } = (self as any).chai;
 const { describe, it, before } = spec;
 
 describe('Isolatable', () => {
   before((context: any) => ({
     ...context,
-    spec: new IsolatableSpec()
+    spec: Spec.create(Isolatable)
   }));
 
   describe('with tests', () => {
@@ -56,7 +54,7 @@ describe('Isolatable', () => {
   // test isolation. The current strategy for isolating tests in the browser
   // is not compatible with a spec being run within another spec.
 
-  describeSpecSpec(spec, IsolatableSpec);
+  describeSpecSpec(spec, Spec.create<{}>(Isolatable));
 });
 
 export const isolatableSpec: Spec = spec;
