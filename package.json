@@ -31,5 +31,8 @@
   "bugs": {
     "url": "https://github.com/PolymerLabs/ristretto/issues"
   },
-  "homepage": "https://github.com/PolymerLabs/ristretto#readme"
+  "homepage": "https://github.com/PolymerLabs/ristretto#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }
