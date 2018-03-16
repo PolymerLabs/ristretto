@@ -1,14 +1,14 @@
-# Test Runner
+# Ristretto
 
-Test Runner is a module that does exactly what its name suggests: it runs tests.
+Ristretto is an extensible test runner.
 
 There are several established test runners in the JavaScript ecosystem
 ([Mocha](https://mochajs.org/), [Jasmine](https://jasmine.github.io/) and
 [Jest](https://facebook.github.io/jest/) to name a few of the more prominent
-ones). Test Runner was created to address a feature sweet spot left unaddressed
+ones). Ristretto was created to address a feature sweet spot left unaddressed
 by incumbent projects.
 
-Test Runner has the following qualities:
+Ristretto has the following qualities:
 
  - Simple, concise, class-based factorization
  - Consumable as modules with browser-compatible path specifiers OOB
@@ -21,28 +21,28 @@ Test Runner has the following qualities:
  - No build tooling required to use
  - "JavaScript is the native language, The Web is the native land"
 
-Test Runner is intended to be a single-responsibility detail of a broader, more
+Ristretto is intended to be a single-responsibility detail of a broader, more
 comprehensive testing regime. In this regard, it is most similar to Mocha in its
 breadth of capabilities.
 
-Currently, Test Runner only supports direct usage in a web browser with ESM
+Currently, Ristretto only supports direct usage in a web browser with ESM
 support. Other browsers and platforms (such as Node.js) should work fine with
 sufficient code transformations applied to this module.
 
 ## Installing
 
 ```sh
-npm install @0xcda7a/test-runner
+npm install @polymer/ristretto
 ```
 
 ## Writing tests
 
 All tests start with crafting a spec and exporting that spec for consumption
-elsewhere. Here is an example of a spec written with Test Runner:
+elsewhere. Here is an example of a spec written with Ristretto:
 
 ```javascript
-// Import the Spec class from Test Runner:
-import { Spec } from '../../@0xcda7a/test-runner/lib/spec.js';
+// Import the Spec class from Ristretto:
+import { Spec } from '../../@polymer/ristretto/lib/spec.js';
 
 // Create a Spec instance that represents our spec:
 const spec = new Spec();
@@ -67,8 +67,8 @@ A test suite is a collection of specs, and an optional specialized test
 reporter. Here is a basic example of crafting a test suite and running tests:
 
 ```javascript
-// Import the Suite class from Test Runner:
-import { Suite } from '../../@0xcda7a/test-runner/lib/suite.js';
+// Import the Suite class from Ristretto:
+import { Suite } from '../../@polymer/ristretto/lib/suite.js';
 
 // Import the spec we crafted above:
 import { mySpec } from './my-spec.js';
@@ -83,14 +83,14 @@ suite.run();
 
 ## Reporting results
 
-By default, Test Runner will use a basic `console`-based reporter called
+By default, Ristretto will use a basic `console`-based reporter called
 `ConsoleReporter`. However, it is very easy to craft a custom reporter to
 suite your needs. Let's write a custom reporter that counts tests and
 reports how many failed at the end of the test suite run:
 
 ```javascript
-// Import the base Reporter class from Test Runner:
-import { Reporter } from '../../@0xcda7a/test-runner/lib/reporter.js';
+// Import the base Reporter class from Ristretto:
+import { Reporter } from '../../@polymer/ristretto/lib/reporter.js';
 
 // We export a class that extends the base Reporter class. The reporter has
 // a series of test suite life-cycle callbacks that can be optionally
@@ -133,8 +133,8 @@ export class CountingReporter extends Reporter {
 Now that we have a custom reporter, let's use it in a test suite:
 
 ```javascript
-// Import the Suite class from Test Runner:
-import { Suite } from '../../@0xcda7a/test-runner/lib/suite.js';
+// Import the Suite class from Ristretto:
+import { Suite } from '../../@polymer/ristretto/lib/suite.js';
 
 // Import the custom reporter we created:
 import { CountingReporter } from './counting-reporter.js';

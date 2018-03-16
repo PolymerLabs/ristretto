@@ -1,10 +1,10 @@
 {
-  "name": "@polymer/test-runner",
-  "version": "0.2.0",
+  "name": "@polymer/ristretto",
+  "version": "0.3.0",
   "license": "BSD-3-Clause",
   "flat": true,
   "types": "lib/index.d.ts",
-  "main": "test-runner.js",
+  "main": "ristretto.js",
   "module": "lib/index.js",
   "devDependencies": {
     "@types/chai": "^4.1.2",
@@ -18,18 +18,18 @@
     "bundle": "rollup -c ./rollup.config.js",
     "prepublishOnly": "npm run build && npm run bundle"
   },
-  "description": "Test Runner is a module that does exactly what its name suggests: it runs tests.",
+  "description": "Ristretto runs your tests.",
   "directories": {
     "lib": "lib"
   },
   "dependencies": {},
   "repository": {
     "type": "git",
-    "url": "https://github.com/PolymerLabs/test-runner.git"
+    "url": "https://github.com/PolymerLabs/ristretto.git"
   },
   "author": "The Polymer Authors",
   "bugs": {
-    "url": "https://github.com/PolymerLabs/test-runner/issues"
+    "url": "https://github.com/PolymerLabs/ristretto/issues"
   },
-  "homepage": "https://github.com/PolymerLabs/test-runner#readme"
+  "homepage": "https://github.com/PolymerLabs/ristretto#readme"
 }

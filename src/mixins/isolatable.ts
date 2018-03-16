@@ -39,8 +39,8 @@ export interface IsolatedTest {
 }
 
 enum IsolatedTestMessage {
-  messagePort = 'TestrunnerIsolatedTestMessagePort',
-  ready = 'TestrunnerIsolatedTestReady'
+  messagePort = 'RistrettoIsolatedTestMessagePort',
+  ready = 'RistrettoIsolatedTestReady'
 }
 
 /**
@@ -87,7 +87,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
       const { queryParams } = suite;
       let port: MessagePort | undefined;
 
-      if ('testrunner_isolated' in queryParams) {
+      if ('ristretto_isolated' in queryParams) {
         // Step 5: The isolated test receives the `MessagePort` and proceeds to
         // invoke the actual test implementation:
         port = await this.receiveMessagePort();
@@ -95,7 +95,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
 
       const result = await super.run(suite, ...args);
 
-      if ('testrunner_isolated' in queryParams && port != null) {
+      if ('ristretto_isolated' in queryParams && port != null) {
         // Step 6: The isolated test posts the results through the `MessagePort`
         // back to the main frame:
         port.postMessage(cloneableResult(result));
@@ -108,7 +108,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
         : Promise<IsolatedTestRunContext> {
       const { suite } = context;
       const { queryParams } = suite;
-      const isIsolated = 'testrunner_isolated' in queryParams;
+      const isIsolated = 'ristretto_isolated' in queryParams;
       const shouldBeIsolated = !!this.isolated;
 
       context = await super.windUp(context);
@@ -203,7 +203,7 @@ export function IsolatedTest<T extends Constructor<Test>>(TestImplementation: T)
         const searchPrefix = url.search ? `${url.search}&` : '?';
         const uriAddress = encodeURIComponent(JSON.stringify(address));
         url.search =
-            `${searchPrefix}testrunner_suite_address=${uriAddress}&testrunner_isolated&testrunner_disable_reporting`;
+            `${searchPrefix}ristretto_suite_address=${uriAddress}&ristretto_isolated&ristretto_disable_reporting`;
 
         document.body.appendChild(iframe);
         iframe.src = url.toString();
