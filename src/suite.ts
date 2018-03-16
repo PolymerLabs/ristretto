@@ -24,8 +24,8 @@ import { ConsoleReporter } from './reporters/console-reporter.js';
  */
 export interface SuiteQueryParams {
   [index:string]: string | void;
-  testrunner_suite_address?: string;
-  testrunner_disable_reporting?: void;
+  ristretto_suite_address?: string;
+  ristretto_disable_reporting?: void;
 }
 
 /**
@@ -48,7 +48,7 @@ export interface SuiteAddress {
  * order to be invoked. For example:
  *
  * ```javascript
- * import { Suite } from '../../@0xcda7a/test-runner/suite.js';
+ * import { Suite } from '../../@polymer/ristretto/suite.js';
  * import { fooSpec } from './lib/foo-spec.js';
  * import { barSpec } from './lib/bar-spec.js';
  *
@@ -86,11 +86,11 @@ export class Suite {
     };
 
     this.queryParams = queryParams;
-    this.address = queryParams.testrunner_suite_address
-        ? JSON.parse(queryParams.testrunner_suite_address) as SuiteAddress
+    this.address = queryParams.ristretto_suite_address
+        ? JSON.parse(queryParams.ristretto_suite_address) as SuiteAddress
         : null;
 
-    if ('testrunner_disable_reporting' in queryParams) {
+    if ('ristretto_disable_reporting' in queryParams) {
       this.reporter.disabled = true;
     }
   }
