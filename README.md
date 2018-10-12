@@ -1,3 +1,5 @@
+*🚨 **PROJECT STATUS: EXPERIMENTAL** 🚨This product is in the Experimentation phase. Someone on the team thinks it’s an idea worth exploring, but it may not go any further than this. Use at your own risk.*
+
 # Ristretto
 
 Ristretto is an extensible test runner.
